@@ -1,64 +1,111 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMockStore } from './lib/mockStore';
-import { LogOut, CheckCircle, XCircle, AlertCircle, Plus, Users, CalendarCheck } from 'lucide-react';
+import { 
+  LogOut, Check, X, AlertCircle, Plus, 
+  LayoutDashboard, Users, Clock, ShieldCheck, ChevronRight 
+} from 'lucide-react';
+
+// KOMPONEN JAM REALTIME
+const LiveClock = () => {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <div className="text-right">
+      <p className="text-3xl font-bold text-slate-800 leading-none">
+        {time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+      </p>
+      <p className="text-xs text-slate-500 font-medium">
+        {time.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+      </p>
+    </div>
+  );
+};
 
 export default function App() {
   const { user, students, attendance, login, logout, markAttendance, addStudent } = useMockStore();
-  
-  // State Login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // --- HALAMAN LOGIN ---
+  // HALAMAN LOGIN 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50 px-4 font-sans">
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-blue-100">
-          <div className="text-center mb-8">
-            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CalendarCheck className="text-blue-600" size={32} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-800">Presensi TK Ceria</h1>
-            <p className="text-gray-500 text-sm mt-1">Sistem Absensi Digital</p>
+      <div className="min-h-screen flex bg-slate-50 font-sans text-slate-800">
+        {/* Sisi Kiri (Branding) - Hidden di HP */}
+        <div className="hidden lg:flex w-1/2 bg-indigo-600 items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 opacity-90"></div>
+          <div className="relative z-10 text-center text-white px-10">
+            <h1 className="text-5xl font-bold mb-4">SiHadir TK</h1>
+            <p className="text-indigo-100 text-lg">Sistem Informasi Kehadiran Siswa<br/>Terintegrasi & Real-time.</p>
           </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">EMAIL</label>
-              <input 
-                type="email" 
-                placeholder="guru@tk.com" 
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition"
-                value={email} onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">PASSWORD</label>
-              <input 
-                type="password" 
-                placeholder="123" 
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition"
-                value={password} onChange={e => setPassword(e.target.value)}
-              />
+          {/* Hiasan Circle */}
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Sisi Kanan (Form Login) */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            <div className="mb-8 text-center lg:text-left">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 mb-4 lg:hidden">
+                <ShieldCheck size={24} />
+              </div>
+              <h2 className="text-3xl font-bold text-slate-900">Selamat Datang</h2>
+              <p className="text-slate-500 mt-2">Masuk untuk mengakses dashboard presensi.</p>
             </div>
 
-            <button 
-              onClick={() => {
-                const res = login(email, password);
-                if (!res.success) setErrorMsg(res.message);
-              }}
-              className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-95"
-            >
-              Masuk Aplikasi
-            </button>
-            
-            {errorMsg && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center border border-red-100">{errorMsg}</div>}
-            
-            <div className="mt-6 pt-4 border-t text-xs text-gray-400 text-center">
-              <p>Demo Login:</p>
-              <span className="font-mono bg-gray-100 px-2 py-1 rounded mx-1">guru@tk.com / 123</span>
-              <span className="font-mono bg-gray-100 px-2 py-1 rounded mx-1">kepsek@tk.com / 123</span>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Email Akses</label>
+                <input 
+                  type="email" 
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+                  placeholder="name@school.id"
+                  value={email} onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Password</label>
+                <input 
+                  type="password" 
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+                  placeholder="••••••••"
+                  value={password} onChange={e => setPassword(e.target.value)}
+                />
+              </div>
+
+              {errorMsg && (
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 border border-red-100">
+                  <AlertCircle size={16} /> {errorMsg}
+                </div>
+              )}
+
+              <button 
+                onClick={() => {
+                  setIsLoading(true);
+                  setTimeout(() => { 
+                    const res = login(email, password);
+                    if (!res.success) setErrorMsg(res.message);
+                    setIsLoading(false);
+                  }, 800);
+                }}
+                disabled={isLoading}
+                className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isLoading ? 'Memproses...' : 'Masuk ke Dashboard'}
+              </button>
+            </div>
+
+            <div className="mt-8 text-center text-xs text-slate-400">
+              <p>Demo Access:</p>
+              <div className="mt-2 space-x-2">
+                <span className="bg-slate-100 px-2 py-1 rounded border">guru@tk.com / 123</span>
+                <span className="bg-slate-100 px-2 py-1 rounded border">kepsek@tk.com / 123</span>
+              </div>
             </div>
           </div>
         </div>
@@ -66,28 +113,28 @@ export default function App() {
     );
   }
 
-  // --- HALAMAN UTAMA (DASHBOARD) ---
+  // MAIN LAYOUT (DASHBOARD) 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
-      {/* Navbar */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      {/* Top Navbar Modern */}
+      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${user.role === 'admin' ? 'bg-purple-600' : 'bg-blue-600'}`}>
+             <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${user.role === 'admin' ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : 'bg-gradient-to-br from-blue-500 to-cyan-500'}`}>
                 {user.name.charAt(0)}
              </div>
-             <div>
-               <h1 className="text-sm font-bold text-gray-800 leading-tight">{user.name}</h1>
-               <p className="text-xs text-gray-500 capitalize">{user.role === 'admin' ? 'Kepala Sekolah' : 'Guru Kelas'}</p>
+             <div className="leading-tight">
+               <h1 className="text-sm font-bold text-slate-900">{user.name}</h1>
+               <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{user.role === 'admin' ? 'Administrator' : 'Pengajar'}</span>
              </div>
           </div>
-          <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition">
-            <LogOut size={20} />
+          <button onClick={logout} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+            <LogOut size={18} />
           </button>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-4 py-8">
         {user.role === 'teacher' ? (
           <TeacherDashboard students={students} attendance={attendance} onMark={markAttendance} />
         ) : (
@@ -98,49 +145,72 @@ export default function App() {
   );
 }
 
-// === KOMPONEN UI GURU ===
+// DASHBOARD GURU 
 function TeacherDashboard({ students, attendance, onMark }) {
   const today = new Date().toISOString().split('T')[0];
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const todayFormatted = new Date().toLocaleDateString('id-ID', options);
-
-  // Group siswa berdasarkan kelas
   const classes = [...new Set(students.map(s => s.class))];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-800">Absensi Hari Ini</h2>
-        <span className="text-xs font-medium bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{todayFormatted}</span>
+      {/* Header Widget */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Presensi Harian</h2>
+          <p className="text-slate-500 text-sm">Silakan input kehadiran siswa hari ini.</p>
+        </div>
+        <LiveClock />
       </div>
 
       {classes.map(className => (
         <div key={className} className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider pl-1 border-l-4 border-blue-500 ml-1">{className}</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-2 px-1">
+             <div className="h-4 w-1 bg-indigo-500 rounded-full"></div>
+             <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wider">{className}</h3>
+          </div>
+          
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {students.filter(s => s.class === className).map(student => {
               const status = attendance.find(a => a.studentId === student.id && a.date === today)?.status;
 
               return (
-                <div key={student.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all ${status ? 'border-blue-200 ring-1 ring-blue-100' : 'border-gray-100'}`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <img src={student.photo} alt={student.name} className="w-12 h-12 rounded-full bg-gray-100" />
-                    <div>
-                      <h4 className="font-bold text-gray-800">{student.name}</h4>
-                      <p className={`text-xs font-medium px-2 py-0.5 rounded w-fit mt-1 ${
-                        status === 'hadir' ? 'bg-green-100 text-green-700' :
-                        status === 'sakit' ? 'bg-orange-100 text-orange-700' :
-                        status === 'alpha' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {status ? status.toUpperCase() : 'Belum Absen'}
-                      </p>
+                <div key={student.id} className={`bg-white p-4 rounded-2xl border transition-all duration-200 hover:shadow-md ${
+                  status ? 'border-indigo-100 ring-2 ring-indigo-50/50' : 'border-slate-100'
+                }`}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden border border-white shadow-sm">
+                        <img src={student.photo} alt="" className="w-full h-full object-cover"/>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-sm">{student.name}</h4>
+                        <p className="text-[10px] text-slate-400 font-mono">ID: {student.id}</p>
+                      </div>
                     </div>
+                    {/* Status Badge Kecil */}
+                    {status && (
+                       <span className={`w-2 h-2 rounded-full ${
+                         status === 'hadir' ? 'bg-green-500' : status === 'sakit' ? 'bg-orange-500' : 'bg-red-500'
+                       }`}></span>
+                    )}
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-2">
-                    <VoteButton active={status === 'hadir'} onClick={() => onMark(student.id, 'hadir', today)} color="green" icon={<CheckCircle size={16}/>} label="Hadir" />
-                    <VoteButton active={status === 'sakit'} onClick={() => onMark(student.id, 'sakit', today)} color="orange" icon={<AlertCircle size={16}/>} label="Sakit/Izin" />
-                    <VoteButton active={status === 'alpha'} onClick={() => onMark(student.id, 'alpha', today)} color="red" icon={<XCircle size={16}/>} label="Alpha" />
+                  {/* Tombol Modern */}
+                  <div className="flex bg-slate-50 p-1 rounded-xl gap-1">
+                    <ModernVoteBtn 
+                      active={status === 'hadir'} 
+                      onClick={() => onMark(student.id, 'hadir', today)} 
+                      type="hadir" icon={<Check size={14} strokeWidth={3} />} 
+                    />
+                    <ModernVoteBtn 
+                      active={status === 'sakit'} 
+                      onClick={() => onMark(student.id, 'sakit', today)} 
+                      type="sakit" icon={<AlertCircle size={14} strokeWidth={3} />} 
+                    />
+                    <ModernVoteBtn 
+                      active={status === 'alpha'} 
+                      onClick={() => onMark(student.id, 'alpha', today)} 
+                      type="alpha" icon={<X size={14} strokeWidth={3} />} 
+                    />
                   </div>
                 </div>
               );
@@ -152,120 +222,154 @@ function TeacherDashboard({ students, attendance, onMark }) {
   );
 }
 
-function VoteButton({ active, onClick, color, icon, label }) {
-  const activeStyle = {
-    green: "bg-green-600 text-white border-green-600 shadow-green-200",
-    orange: "bg-orange-500 text-white border-orange-500 shadow-orange-200",
-    red: "bg-red-500 text-white border-red-500 shadow-red-200"
+// Tombol Khusus Guru
+function ModernVoteBtn({ active, onClick, type, icon }) {
+  const styles = {
+    hadir: active ? "bg-white text-green-600 shadow-sm ring-1 ring-green-500" : "text-slate-400 hover:text-green-600 hover:bg-white",
+    sakit: active ? "bg-white text-orange-600 shadow-sm ring-1 ring-orange-500" : "text-slate-400 hover:text-orange-600 hover:bg-white",
+    alpha: active ? "bg-white text-red-600 shadow-sm ring-1 ring-red-500" : "text-slate-400 hover:text-red-600 hover:bg-white",
   };
-  
+
   return (
     <button 
       onClick={onClick} 
-      className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg text-[10px] font-bold border transition-all active:scale-95 shadow-sm ${
-        active ? activeStyle[color] + " shadow-md" : "bg-white text-gray-500 border-gray-100 hover:bg-gray-50"
-      }`}
+      className={`flex-1 py-2 rounded-lg transition-all duration-200 flex justify-center items-center ${styles[type]}`}
     >
-      {icon} <span>{label}</span>
+      {icon}
     </button>
   );
 }
 
-// === KOMPONEN UI ADMIN (KEPALA SEKOLAH) ===
+
+// DASHBOARD ADMIN 
 function AdminDashboard({ students, attendance, onAddStudent }) {
   const [newName, setNewName] = useState('');
   const [newClass, setNewClass] = useState('TK A');
   const today = new Date().toISOString().split('T')[0];
 
-  // Statistik Ringkas
-  const todayPresence = attendance.filter(a => a.date === today && a.status === 'hadir').length;
-  const todaySick = attendance.filter(a => a.date === today && a.status === 'sakit').length;
+  const totalSiswa = students.length;
+  const hadirHariIni = attendance.filter(a => a.date === today && a.status === 'hadir').length;
+  const persentase = totalSiswa > 0 ? Math.round((hadirHariIni / totalSiswa) * 100) : 0;
 
   return (
     <div className="space-y-8">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white p-5 rounded-2xl shadow-lg shadow-purple-200">
-          <div className="flex items-center gap-2 mb-1 opacity-80">
-            <Users size={16} /> <span className="text-xs font-bold uppercase">Total Siswa</span>
+      
+      {/* 1. Overview Widgets */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2 text-indigo-600">
+               <Users size={18} /> <span className="text-xs font-bold uppercase tracking-wider">Total Siswa</span>
+            </div>
+            <p className="text-4xl font-bold text-slate-800">{totalSiswa}</p>
           </div>
-          <p className="text-3xl font-bold">{students.length}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-1 text-gray-400">
-            <CalendarCheck size={16} /> <span className="text-xs font-bold uppercase">Hadir Hari Ini</span>
+
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+           <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+           <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2 text-green-600">
+               <Check size={18} /> <span className="text-xs font-bold uppercase tracking-wider">Hadir Hari Ini</span>
+            </div>
+            <p className="text-4xl font-bold text-slate-800">{hadirHariIni}</p>
           </div>
-          <p className="text-3xl font-bold text-gray-800">{todayPresence} <span className="text-sm text-gray-400 font-normal">Anak</span></p>
-          {todaySick > 0 && <p className="text-xs text-orange-500 mt-1 font-medium">{todaySick} Izin/Sakit</p>}
+        </div>
+
+        {/* Chart Sederhana (CSS Bar) */}
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 rounded-3xl shadow-lg shadow-indigo-200 flex flex-col justify-between">
+           <div>
+             <span className="text-indigo-200 text-xs font-bold uppercase tracking-wider">Persentase Kehadiran</span>
+             <div className="flex items-end gap-2 mt-1">
+               <p className="text-4xl font-bold">{persentase}%</p>
+               <span className="text-sm mb-1 opacity-80">Today</span>
+             </div>
+           </div>
+           <div className="w-full bg-black/20 h-2 rounded-full mt-4 overflow-hidden">
+              <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${persentase}%` }}></div>
+           </div>
         </div>
       </div>
 
-      {/* Form Tambah Siswa */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Plus size={18} className="text-purple-600 bg-purple-100 p-0.5 rounded"/> Tambah Siswa Baru
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input 
-            type="text" placeholder="Nama Lengkap Anak" 
-            className="flex-1 p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-purple-500 transition"
-            value={newName} onChange={e => setNewName(e.target.value)}
-          />
-          <select 
-            className="p-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none"
-            value={newClass} onChange={e => setNewClass(e.target.value)}
-          >
-            <option>TK A</option>
-            <option>TK B</option>
-          </select>
-          <button 
-            onClick={() => {
-              if(newName) {
-                onAddStudent(newName, newClass);
-                setNewName('');
-              }
-            }}
-            className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-purple-700 transition shadow-lg shadow-purple-200 active:scale-95"
-          >
-            Simpan
-          </button>
+      {/* 2. Management Section */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        
+        {/* Form Tambah - Modern Card */}
+        <div className="lg:col-span-1">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 sticky top-24">
+            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><Plus size={18}/></span>
+              Input Siswa Baru
+            </h3>
+            <div className="space-y-3">
+              <input 
+                type="text" placeholder="Nama Lengkap" 
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                value={newName} onChange={e => setNewName(e.target.value)}
+              />
+              <select 
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                value={newClass} onChange={e => setNewClass(e.target.value)}
+              >
+                <option>TK A</option>
+                <option>TK B</option>
+              </select>
+              <button 
+                onClick={() => {
+                  if(newName) {
+                    onAddStudent(newName, newClass);
+                    setNewName('');
+                  }
+                }}
+                className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold text-sm hover:bg-black transition shadow-lg"
+              >
+                + Simpan Data
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Tabel Data Siswa */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-50 bg-gray-50/50">
-          <h3 className="font-bold text-gray-700 text-sm">Database Siswa</h3>
+        {/* List Data - Modern Table */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-5 border-b border-slate-50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-700">Database Siswa</h3>
+              <button className="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition">View All</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Siswa</th>
+                    <th className="px-6 py-4">Kelas</th>
+                    <th className="px-6 py-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {students.map(s => (
+                    <tr key={s.id} className="hover:bg-slate-50/80 transition group">
+                      <td className="px-6 py-4 font-bold text-slate-700 flex items-center gap-3">
+                         <img src={s.photo} alt="" className="w-8 h-8 rounded-full bg-slate-100 object-cover"/>
+                         {s.name}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${s.class === 'TK A' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                          {s.class}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="text-slate-300 group-hover:text-indigo-600 transition">
+                          <ChevronRight size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-white text-gray-400 font-medium text-xs uppercase tracking-wider">
-              <tr>
-                <th className="p-4 border-b border-gray-50">Nama Siswa</th>
-                <th className="p-4 border-b border-gray-50">Kelas</th>
-                <th className="p-4 border-b border-gray-50">ID System</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {students.map(s => (
-                <tr key={s.id} className="hover:bg-gray-50 transition">
-                  <td className="p-4 font-bold text-gray-700 flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
-                        <img src={s.photo} alt="" className="w-full h-full object-cover"/>
-                     </div>
-                     {s.name}
-                  </td>
-                  <td className="p-4 text-gray-500">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${s.class === 'TK A' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
-                      {s.class}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-400 text-xs font-mono">#{s.id}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
       </div>
     </div>
   );

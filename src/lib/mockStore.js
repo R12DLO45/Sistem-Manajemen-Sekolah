@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-// === DATA DUMMY AWAL ===
+// DATA DUMMY AWAL 
 const INITIAL_STUDENTS = [
   { id: 1, name: 'Adit Sopo', class: 'TK A', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Adit' },
   { id: 2, name: 'Jarwo Kuat', class: 'TK A', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jarwo' },
@@ -9,12 +9,12 @@ const INITIAL_STUDENTS = [
 ];
 
 const INITIAL_USERS = [
-  // Password-nya simpel aja buat demo
+  // Password
   { id: 1, email: 'guru@tk.com', password: '123', name: 'Bu Guru Siti', role: 'teacher' },
   { id: 2, email: 'kepsek@tk.com', password: '123', name: 'Pak Budi (Kepsek)', role: 'admin' },
 ];
 
-// === CUSTOM HOOK (SIMULASI DATABASE) ===
+// SIMULASI DATABASE
 export const useMockStore = () => {
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
@@ -24,7 +24,7 @@ export const useMockStore = () => {
   useEffect(() => {
     const storedStudents = JSON.parse(localStorage.getItem('tk_students'));
     const storedAttendance = JSON.parse(localStorage.getItem('tk_attendance'));
-    const storedUser = JSON.parse(localStorage.getItem('tk_user_session')); // Biar kalau refresh ngga logout
+    const storedUser = JSON.parse(localStorage.getItem('tk_user_session')); 
     
     if (storedStudents) setStudents(storedStudents);
     else {
@@ -56,8 +56,7 @@ export const useMockStore = () => {
   // Absen (Guru)
   const markAttendance = (studentId, status, date) => {
     const newRecord = { id: Date.now(), studentId, status, date, markedBy: user?.name };
-    
-    // Hapus record lama hari ini (replace)
+  
     const filtered = attendance.filter(a => !(a.studentId === studentId && a.date === date));
     const newAttendance = [...filtered, newRecord];
     
