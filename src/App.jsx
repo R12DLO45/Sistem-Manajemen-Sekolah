@@ -1,53 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LogOut, Check, X, AlertCircle, Plus, 
-  Users, ShieldCheck, ChevronRight, Clock,
-  Pencil, Trash2, RotateCcw, MessageSquareText, School
-} from 'lucide-react';
+import { LogOut, RotateCcw } from 'lucide-react';
 
-// DATA USER (DIPISAH PER GURU)
-const SEED_USERS = [
-  // Guru Kelas A (Cuma bisa lihat TK A)
-  { id: 1, email: 'guru.a@tk.com', password: '123', name: 'Bu Siti (TK A)', role: 'teacher', assignedClass: 'TK A' },
-  
-  // Guru Kelas B (Cuma bisa lihat TK B)
-  { id: 2, email: 'guru.b@tk.com', password: '123', name: 'Bu Rina (TK B)', role: 'teacher', assignedClass: 'TK B' },
-  
-  // Kepala Sekolah (Lihat Semua + Edit Data)
-  { id: 99, email: 'kepsek@tk.com', password: '123', name: 'Pak Budi (Kepsek)', role: 'admin', assignedClass: 'ALL' },
-];
+// Import dari file yang baru kita buat
+import { SEED_USERS, SEED_STUDENTS } from './data/mockData';
+import LoginPage from './components/LoginPage';
+import TeacherDashboard from './components/TeacherDashboard';
+import AdminDashboard from './components/AdminDashboard';
 
-// DATA SISWA
-const SEED_STUDENTS = [
-  { id: 1, name: 'Adit Sopo', class: 'TK A', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Adit' },
-  { id: 2, name: 'Jarwo Kuat', class: 'TK A', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jarwo' },
-  { id: 3, name: 'Susanti', class: 'TK B', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Susanti' },
-  { id: 4, name: 'Mei Mei', class: 'TK B', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mei' },
-  { id: 5, name: 'Ijat', class: 'TK A', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ijat' },
-  { id: 6, name: 'Mail', class: 'TK B', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mail' },
-];
-
-// KOMPONEN JAM REALTIME
-const LiveClock = () => {
-  const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  
-  return (
-    <div className="text-right hidden sm:block">
-      <p className="text-3xl font-bold text-slate-800 leading-none">
-        {time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-      </p>
-      <p className="text-xs text-slate-500 font-medium">
-        {time.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-      </p>
-    </div>
-  );
-};
-
-// KOMPONEN UTAMA (APP)
 export default function App() {
   // STATE MANAGEMENT
   const [students, setStudents] = useState(() => {
@@ -65,6 +24,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  // EFFECT
   useEffect(() => { sessionStorage.setItem('tk_session_students', JSON.stringify(students)); }, [students]);
   useEffect(() => { sessionStorage.setItem('tk_session_attendance', JSON.stringify(attendance)); }, [attendance]);
   useEffect(() => { 
@@ -108,6 +68,7 @@ export default function App() {
     }
   };
 
+  // RENDER
   if (!user) return <LoginPage onLogin={handleLogin} onReset={resetDemo} />;
 
   return (
@@ -142,248 +103,6 @@ export default function App() {
           <AdminDashboard students={students} attendance={attendance} onAdd={addStudent} onUpdate={updateStudent} onDelete={deleteStudent} />
         )}
       </main>
-    </div>
-  );
-}
-
-// HALAMAN LOGIN 
-function LoginPage({ onLogin, onReset }) {
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [err, setErr] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  return (
-    <div className="min-h-screen flex bg-slate-50 font-sans text-slate-800">
-       <div className="hidden lg:flex w-1/2 bg-indigo-600 items-center justify-center relative overflow-hidden">
-         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 opacity-90"></div>
-         <div className="relative z-10 text-center text-white px-10">
-           <h1 className="text-5xl font-bold mb-4">SiHadir TK</h1>
-           <p className="text-indigo-100 text-lg">Platform Absensi Modern & Terpisah Per Kelas.</p>
-         </div>
-       </div>
-       <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-         <div className="w-full max-w-md">
-           <div className="mb-8 text-center lg:text-left">
-             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 mb-4 lg:hidden"><School size={24} /></div>
-             <h2 className="text-3xl font-bold text-slate-900">Selamat Datang</h2>
-             <p className="text-slate-500 mt-2">Masuk sesuai Akun Kelas masing-masing.</p>
-           </div>
-           <div className="space-y-5">
-             <input value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Email (guru.a@tk.com)" />
-             <input type="password" value={pass} onChange={e=>setPass(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Password (123)" />
-             {err && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 border border-red-100"><AlertCircle size={16} /> {err}</div>}
-             <button onClick={()=>{setLoading(true); setTimeout(()=>{const res=onLogin(email, pass); if(!res.success) setErr(res.message); setLoading(false);}, 500)}} disabled={loading} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70">
-               {loading ? 'Memproses...' : 'Masuk Aplikasi'}
-             </button>
-           </div>
-           <div className="mt-8 text-center text-xs text-slate-400">
-             <p>Akun Demo Guru:</p>
-             <div className="mt-2 flex flex-wrap justify-center gap-2">
-               <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-mono">guru.a@tk.com / 123</span>
-               <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded font-mono">guru.b@tk.com / 123</span>
-             </div>
-             <p className="mt-2">Akun Kepala Sekolah:</p>
-             <div className="mt-1">
-                <span className="bg-slate-100 px-2 py-1 rounded border font-mono">kepsek@tk.com / 123</span>
-             </div>
-             <button onClick={onReset} className="mt-4 text-indigo-500 underline hover:text-indigo-700 block mx-auto">Reset Data</button>
-           </div>
-         </div>
-       </div>
-    </div>
-  );
-}
-
-// DASHBOARD GURU (FILTERED VIEW) 
-function TeacherDashboard({ user, students, attendance, onMark }) {
-  const today = new Date().toISOString().split('T')[0];
-  
-  // LOGIKA UTAMA: Filter siswa hanya sesuai kelas Guru yang login
-  const myStudents = students.filter(s => s.class === user.assignedClass);
-
-  // State Modal
-  const [modal, setModal] = useState({ show: false, studentId: null, type: '', name: '' });
-  const [noteInput, setNoteInput] = useState('');
-
-  const handleVote = (student, type) => {
-    if (type === 'hadir') {
-      onMark(student.id, 'hadir', '');
-    } else {
-      setModal({ show: true, studentId: student.id, type: type, name: student.name });
-      const existing = attendance.find(a => a.studentId === student.id && a.date === today);
-      setNoteInput(existing?.note || '');
-    }
-  };
-
-  const saveNote = () => {
-    onMark(modal.studentId, modal.type, noteInput);
-    setModal({ show: false, studentId: null, type: '', name: '' });
-    setNoteInput('');
-  };
-
-  return (
-    <div className="space-y-6 relative">
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">Kelas {user.assignedClass}</h2>
-          <p className="text-slate-500 text-sm">Anda hanya melihat siswa kelas {user.assignedClass}.</p>
-        </div>
-        <LiveClock />
-      </div>
-
-      {/* Tidak perlu Looping Kelas lagi, langsung render siswanya */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {myStudents.length === 0 ? (
-          <div className="col-span-full text-center py-10 text-slate-400 bg-slate-50 rounded-2xl border border-dashed">
-            Belum ada siswa di kelas {user.assignedClass}
-          </div>
-        ) : (
-          myStudents.map(student => {
-            const record = attendance.find(a => a.studentId === student.id && a.date === today);
-            const status = record?.status;
-
-            return (
-              <div key={student.id} className={`bg-white p-4 rounded-2xl border transition hover:shadow-md ${status ? 'border-indigo-100 ring-2 ring-indigo-50' : 'border-slate-100'}`}>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <img src={student.photo} className="w-10 h-10 rounded-full bg-slate-100 border border-white shadow-sm"/>
-                    <div><h4 className="font-bold text-slate-800 text-sm">{student.name}</h4><p className="text-[10px] text-slate-400 font-mono">ID: {student.id}</p></div>
-                  </div>
-                  {status && <span className={`w-2 h-2 rounded-full ${status==='hadir'?'bg-green-500':status==='sakit'?'bg-orange-500':'bg-red-500'}`}></span>}
-                </div>
-                
-                {record?.note && (
-                  <div className="mb-3 bg-amber-50 text-amber-700 text-xs p-2 rounded-lg flex gap-2 items-start border border-amber-100">
-                    <MessageSquareText size={14} className="mt-0.5 shrink-0"/>
-                    <span className="line-clamp-2 italic">"{record.note}"</span>
-                  </div>
-                )}
-
-                <div className="flex bg-slate-50 p-1 rounded-xl gap-1">
-                  {['hadir','sakit','alpha'].map(type => (
-                    <button key={type} onClick={() => handleVote(student, type)} className={`flex-1 py-2 rounded-lg transition flex justify-center ${status === type 
-                      ? (type==='hadir'?'bg-white text-green-600 shadow ring-1 ring-green-500': type==='sakit'?'bg-white text-orange-600 shadow ring-1 ring-orange-500':'bg-white text-red-600 shadow ring-1 ring-red-500') 
-                      : 'text-slate-400 hover:bg-white'}`}>
-                      {type==='hadir'?<Check size={14} strokeWidth={3}/> : type==='sakit'?<AlertCircle size={14} strokeWidth={3}/> : <X size={14} strokeWidth={3}/>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* MODAL POPUP */}
-      {modal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden scale-100 animate-in zoom-in-95 duration-200">
-              <div className={`p-4 text-white flex justify-between items-center ${modal.type === 'sakit' ? 'bg-orange-500' : 'bg-red-500'}`}>
-                 <h3 className="font-bold flex items-center gap-2">
-                    {modal.type === 'sakit' ? <AlertCircle size={20}/> : <X size={20}/>}
-                    Keterangan {modal.type === 'sakit' ? 'Sakit' : 'Alpha'}
-                 </h3>
-                 <button onClick={()=>setModal({...modal, show:false})} className="text-white/80 hover:text-white"><X size={20}/></button>
-              </div>
-              <div className="p-5">
-                 <p className="text-sm text-slate-500 mb-2">Catatan untuk <span className="font-bold text-slate-800">{modal.name}</span>:</p>
-                 <textarea 
-                    autoFocus
-                    placeholder="Tulis keterangan..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24 resize-none"
-                    value={noteInput} onChange={e => setNoteInput(e.target.value)}
-                 />
-              </div>
-              <div className="p-4 bg-slate-50 flex gap-3 justify-end">
-                 <button onClick={()=>setModal({...modal, show:false})} className="px-4 py-2 text-slate-500 text-sm font-bold hover:bg-slate-200 rounded-lg transition">Batal</button>
-                 <button onClick={saveNote} className="px-6 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-black transition shadow-lg">Simpan</button>
-              </div>
-           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// DASHBOARD ADMIN (LIHAT SEMUA KELAS)
-function AdminDashboard({ students, attendance, onAdd, onUpdate, onDelete }) {
-  const [form, setForm] = useState({ id: null, name: '', class: 'TK A' });
-  const today = new Date().toISOString().split('T')[0];
-  
-  const totalSiswa = students.length;
-  const hadirHariIni = attendance.filter(a => a.date === today && a.status === 'hadir').length;
-  const persentase = totalSiswa > 0 ? Math.round((hadirHariIni / totalSiswa) * 100) : 0;
-
-  const handleSubmit = () => {
-    if(!form.name) return;
-    if(form.id) onUpdate(form.id, form.name, form.class);
-    else onAdd(form.name, form.class);
-    setForm({ id: null, name: '', class: 'TK A' });
-  };
-
-  const handleEdit = (s) => { setForm(s); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-
-  return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 group relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4"></div>
-          <div className="relative z-10"><div className="flex items-center gap-2 mb-2 text-indigo-600"><Users size={18}/><span className="text-xs font-bold uppercase">Total Siswa</span></div><p className="text-4xl font-bold text-slate-800">{totalSiswa}</p></div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 group relative overflow-hidden">
-           <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div>
-           <div className="relative z-10"><div className="flex items-center gap-2 mb-2 text-green-600"><Check size={18}/><span className="text-xs font-bold uppercase">Hadir Hari Ini</span></div><p className="text-4xl font-bold text-slate-800">{hadirHariIni}</p></div>
-        </div>
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 rounded-3xl shadow-lg shadow-indigo-200 flex flex-col justify-between">
-           <div><span className="text-indigo-200 text-xs font-bold uppercase">Persentase</span><div className="flex items-end gap-2 mt-1"><p className="text-4xl font-bold">{persentase}%</p><span className="text-sm mb-1 opacity-80">Today</span></div></div>
-           <div className="w-full bg-black/20 h-2 rounded-full mt-4 overflow-hidden"><div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${persentase}%` }}></div></div>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <div className={`p-6 rounded-3xl border sticky top-24 transition-colors ${form.id ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-100'}`}>
-            <h3 className={`font-bold mb-4 flex items-center gap-2 ${form.id ? 'text-orange-700' : 'text-slate-800'}`}>
-              <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${form.id ? 'bg-orange-200 text-orange-700' : 'bg-indigo-100 text-indigo-600'}`}>{form.id ? <Pencil size={18}/> : <Plus size={18}/>}</span>
-              {form.id ? 'Edit Data Siswa' : 'Input Siswa Baru'}
-            </h3>
-            <div className="space-y-3">
-              <input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nama Lengkap" />
-              <select value={form.class} onChange={e=>setForm({...form, class:e.target.value})} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"><option>TK A</option><option>TK B</option></select>
-              <button onClick={handleSubmit} className={`w-full py-3 rounded-xl font-bold text-sm text-white shadow-lg transition ${form.id ? 'bg-orange-500 hover:bg-orange-600' : 'bg-slate-800 hover:bg-black'}`}>{form.id ? 'Update Perubahan' : '+ Simpan Data'}</button>
-              {form.id && <button onClick={()=>setForm({id:null, name:'', class:'TK A'})} className="w-full text-xs text-slate-500 py-2">Batal Edit</button>}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-5 border-b border-slate-50"><h3 className="font-bold text-slate-700">Database Siswa (Semua Kelas)</h3></div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-                  <tr><th className="px-6 py-4">Siswa</th><th className="px-6 py-4">Kelas</th><th className="px-6 py-4 text-right">Action</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {students.map(s => (
-                    <tr key={s.id} className="hover:bg-slate-50/80 transition group">
-                      <td className="px-6 py-4 font-bold text-slate-700 flex items-center gap-3"><img src={s.photo} className="w-8 h-8 rounded-full bg-slate-100 object-cover"/>{s.name}</td>
-                      <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-md text-xs font-bold ${s.class==='TK A'?'bg-blue-50 text-blue-600':'bg-purple-50 text-purple-600'}`}>{s.class}</span></td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                           <button onClick={()=>handleEdit(s)} className="p-2 rounded-lg text-slate-300 hover:text-orange-600 hover:bg-orange-50 transition"><Pencil size={16}/></button>
-                           <button onClick={()=>{if(confirm('Hapus siswa ini?')) onDelete(s.id)}} className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition"><Trash2 size={16}/></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
