@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { Users, Check, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Users, Check, Pencil, Plus, Trash2, FileSpreadsheet, Download } from 'lucide-react';
+import * as XLSX from 'xlsx'; // <--- Import Library Excel
 
 export default function AdminDashboard({ students, attendance, onAdd, onUpdate, onDelete }) {
+  // STATE
   const [form, setForm] = useState({ id: null, name: '', class: 'TK A' });
-  const today = new Date().toISOString().split('T')[0];
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // Format: YYYY-MM
   
+  // STATISTIK
+  const today = new Date().toISOString().split('T')[0];
   const totalSiswa = students.length;
   const hadirHariIni = attendance.filter(a => a.date === today && a.status === 'hadir').length;
   const persentase = totalSiswa > 0 ? Math.round((hadirHariIni / totalSiswa) * 100) : 0;
 
+  // HANDLER CRUD 
   const handleSubmit = () => {
     if(!form.name) return;
     if(form.id) onUpdate(form.id, form.name, form.class);
@@ -18,14 +23,63 @@ export default function AdminDashboard({ students, attendance, onAdd, onUpdate, 
 
   const handleEdit = (s) => { setForm(s); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
+  // LOGIKA EXPORT EXCEL
+  const handleDownloadReport = () => {
+    // 1. Siapkan Data
+    const [year, month] = selectedMonth.split('-');
+    const daysInMonth = new Date(year, month, 0).getDate(); // Hitung jumlah hari (28/30/31)
+    
+    // Header Excel
+    const header = ['No', 'Nama Siswa', 'Kelas'];
+    for (let d = 1; d <= daysInMonth; d++) header.push(d); // Kolom Tgl 1-31
+    header.push('Hadir', 'Sakit', 'Alpha'); // Kolom Total
+
+    // Isi Data Baris per Baris
+    const data = students.map((s, index) => {
+      const row = [index + 1, s.name, s.class];
+      let totalH = 0, totalS = 0, totalA = 0;
+
+      // Loop tanggal 1 sampai akhir bulan
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${selectedMonth}-${String(d).padStart(2, '0')}`;
+        const record = attendance.find(a => a.studentId === s.id && a.date === dateStr);
+        
+        let statusSymbol = '-';
+        if (record) {
+          if (record.status === 'hadir') { statusSymbol = 'v'; totalH++; }
+          else if (record.status === 'sakit') { statusSymbol = 'S'; totalS++; }
+          else if (record.status === 'alpha') { statusSymbol = 'A'; totalA++; }
+        }
+        row.push(statusSymbol);
+      }
+      
+      // Masukkan Total
+      row.push(totalH, totalS, totalA);
+      return row;
+    });
+
+    // 2. Buat Worksheet
+    const ws = XLSX.utils.aoa_to_sheet([header, ...data]); // aoa = Array of Arrays
+    
+    // Atur Lebar Kolom (Biar rapi)
+    ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }]; // Lebar kolom No, Nama, Kelas
+
+    // 3. Buat Workbook & Download
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Presensi ${selectedMonth}`);
+    XLSX.writeFile(wb, `Laporan_Absensi_TK_${selectedMonth}.xlsx`);
+  };
+
   return (
     <div className="space-y-8">
+      
+      {/* 1. Widgets Stats (Atas) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 group relative overflow-hidden">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
           <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4"></div>
           <div className="relative z-10"><div className="flex items-center gap-2 mb-2 text-indigo-600"><Users size={18}/><span className="text-xs font-bold uppercase">Total Siswa</span></div><p className="text-4xl font-bold text-slate-800">{totalSiswa}</p></div>
         </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 group relative overflow-hidden">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
            <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div>
            <div className="relative z-10"><div className="flex items-center gap-2 mb-2 text-green-600"><Check size={18}/><span className="text-xs font-bold uppercase">Hadir Hari Ini</span></div><p className="text-4xl font-bold text-slate-800">{hadirHariIni}</p></div>
         </div>
@@ -35,7 +89,39 @@ export default function AdminDashboard({ students, attendance, onAdd, onUpdate, 
         </div>
       </div>
 
+      {/* 2. AREA LAPORAN BULANAN */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-green-100 p-3 rounded-xl text-green-600">
+              <FileSpreadsheet size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800">Laporan Bulanan</h3>
+              <p className="text-sm text-slate-500">Download rekap kehadiran format Excel.</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-2 w-full sm:w-auto">
+            <input 
+              type="month" 
+              className="p-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            />
+            <button 
+              onClick={handleDownloadReport}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition shadow-lg shadow-green-100"
+            >
+              <Download size={16} /> Export Excel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. CRUD Management */}
       <div className="grid lg:grid-cols-3 gap-8">
+        {/* Form Input */}
         <div className="lg:col-span-1">
           <div className={`p-6 rounded-3xl border sticky top-24 transition-colors ${form.id ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-100'}`}>
             <h3 className={`font-bold mb-4 flex items-center gap-2 ${form.id ? 'text-orange-700' : 'text-slate-800'}`}>
@@ -51,6 +137,7 @@ export default function AdminDashboard({ students, attendance, onAdd, onUpdate, 
           </div>
         </div>
 
+        {/* Tabel Data */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-5 border-b border-slate-50"><h3 className="font-bold text-slate-700">Database Siswa (Semua Kelas)</h3></div>
