@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { Users, Check, Pencil, Plus, Trash2, FileSpreadsheet, Download } from 'lucide-react';
-import * as XLSX from 'xlsx'; // <--- Import Library Excel
+import { Users, Check, Pencil, Plus, Trash2, FileSpreadsheet, Download, AlertCircle, X } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function AdminDashboard({ students, attendance, onAdd, onUpdate, onDelete }) {
   // STATE
   const [form, setForm] = useState({ id: null, name: '', class: 'TK A' });
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // Format: YYYY-MM
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   
   // STATISTIK
   const today = new Date().toISOString().split('T')[0];
   const totalSiswa = students.length;
+  
+  // Hitung semua status
   const hadirHariIni = attendance.filter(a => a.date === today && a.status === 'hadir').length;
+  const sakitHariIni = attendance.filter(a => a.date === today && a.status === 'sakit').length; // Mewakili Izin/Sakit
+  const alphaHariIni = attendance.filter(a => a.date === today && a.status === 'alpha').length;
+  
   const persentase = totalSiswa > 0 ? Math.round((hadirHariIni / totalSiswa) * 100) : 0;
 
-  // HANDLER CRUD 
+  // HANDLER CRUD
   const handleSubmit = () => {
     if(!form.name) return;
     if(form.id) onUpdate(form.id, form.name, form.class);
@@ -23,23 +28,19 @@ export default function AdminDashboard({ students, attendance, onAdd, onUpdate, 
 
   const handleEdit = (s) => { setForm(s); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-  // LOGIKA EXPORT EXCEL
+  // EXPORT EXCEL
   const handleDownloadReport = () => {
-    // 1. Siapkan Data
     const [year, month] = selectedMonth.split('-');
-    const daysInMonth = new Date(year, month, 0).getDate(); // Hitung jumlah hari (28/30/31)
+    const daysInMonth = new Date(year, month, 0).getDate();
     
-    // Header Excel
     const header = ['No', 'Nama Siswa', 'Kelas'];
-    for (let d = 1; d <= daysInMonth; d++) header.push(d); // Kolom Tgl 1-31
-    header.push('Hadir', 'Sakit', 'Alpha'); // Kolom Total
+    for (let d = 1; d <= daysInMonth; d++) header.push(d);
+    header.push('Hadir', 'Sakit', 'Alpha');
 
-    // Isi Data Baris per Baris
     const data = students.map((s, index) => {
       const row = [index + 1, s.name, s.class];
       let totalH = 0, totalS = 0, totalA = 0;
 
-      // Loop tanggal 1 sampai akhir bulan
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${selectedMonth}-${String(d).padStart(2, '0')}`;
         const record = attendance.find(a => a.studentId === s.id && a.date === dateStr);
@@ -52,19 +53,12 @@ export default function AdminDashboard({ students, attendance, onAdd, onUpdate, 
         }
         row.push(statusSymbol);
       }
-      
-      // Masukkan Total
       row.push(totalH, totalS, totalA);
       return row;
     });
 
-    // 2. Buat Worksheet
-    const ws = XLSX.utils.aoa_to_sheet([header, ...data]); // aoa = Array of Arrays
-    
-    // Atur Lebar Kolom (Biar rapi)
-    ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }]; // Lebar kolom No, Nama, Kelas
-
-    // 3. Buat Workbook & Download
+    const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+    ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }]; 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `Presensi ${selectedMonth}`);
     XLSX.writeFile(wb, `Laporan_Absensi_TK_${selectedMonth}.xlsx`);
@@ -73,19 +67,60 @@ export default function AdminDashboard({ students, attendance, onAdd, onUpdate, 
   return (
     <div className="space-y-8">
       
-      {/* 1. Widgets Stats (Atas) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4"></div>
-          <div className="relative z-10"><div className="flex items-center gap-2 mb-2 text-indigo-600"><Users size={18}/><span className="text-xs font-bold uppercase">Total Siswa</span></div><p className="text-4xl font-bold text-slate-800">{totalSiswa}</p></div>
+      {/* 1. Widgets Stats (Updated: 5 Kolom) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        
+        {/* Total Siswa */}
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="relative z-10">
+             <div className="flex items-center gap-2 mb-2 text-indigo-600">
+                <Users size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Total</span>
+             </div>
+             <p className="text-3xl font-bold text-slate-800">{totalSiswa}</p>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
-           <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div>
-           <div className="relative z-10"><div className="flex items-center gap-2 mb-2 text-green-600"><Check size={18}/><span className="text-xs font-bold uppercase">Hadir Hari Ini</span></div><p className="text-4xl font-bold text-slate-800">{hadirHariIni}</p></div>
+
+        {/* Hadir (Hijau) */}
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+           <div className="relative z-10">
+             <div className="flex items-center gap-2 mb-2 text-green-600">
+                <Check size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Hadir</span>
+             </div>
+             <p className="text-3xl font-bold text-slate-800">{hadirHariIni}</p>
+           </div>
         </div>
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 rounded-3xl shadow-lg shadow-indigo-200 flex flex-col justify-between">
-           <div><span className="text-indigo-200 text-xs font-bold uppercase">Persentase</span><div className="flex items-end gap-2 mt-1"><p className="text-4xl font-bold">{persentase}%</p><span className="text-sm mb-1 opacity-80">Today</span></div></div>
-           <div className="w-full bg-black/20 h-2 rounded-full mt-4 overflow-hidden"><div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${persentase}%` }}></div></div>
+
+        {/* Izin / Sakit (Oranye) */}
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+           <div className="relative z-10">
+             <div className="flex items-center gap-2 mb-2 text-orange-500">
+                <AlertCircle size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Izin/Sakit</span>
+             </div>
+             <p className="text-3xl font-bold text-slate-800">{sakitHariIni}</p>
+           </div>
+        </div>
+
+        {/* Alpha (Merah) - BARU */}
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+           <div className="relative z-10">
+             <div className="flex items-center gap-2 mb-2 text-red-500">
+                <X size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Alpha</span>
+             </div>
+             <p className="text-3xl font-bold text-slate-800">{alphaHariIni}</p>
+           </div>
+        </div>
+
+        {/* Persentase (Gradient) */}
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-5 rounded-3xl shadow-lg shadow-indigo-200 flex flex-col justify-between col-span-2 md:col-span-1 lg:col-span-1">
+           <div>
+             <span className="text-indigo-200 text-[10px] font-bold uppercase tracking-wider">Kehadiran</span>
+             <div className="flex items-end gap-2 mt-1">
+                <p className="text-3xl font-bold">{persentase}%</p>
+             </div>
+           </div>
+           <div className="w-full bg-black/20 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div className="bg-white h-full rounded-full transition-all duration-1000" style={{ width: `${persentase}%` }}></div>
+           </div>
         </div>
       </div>
 
