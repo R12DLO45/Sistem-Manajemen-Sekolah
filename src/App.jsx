@@ -4,38 +4,50 @@ import { LogOut, RotateCcw } from 'lucide-react';
 import { SEED_USERS, SEED_STUDENTS } from './data/mockData';
 import LoginPage from './components/LoginPage';
 import TeacherDashboard from './components/TeacherDashboard';
-import KepsekDashboard from './components/KepsekDashboard'; // <-- Import file Kepsek yang baru di-rename
-import AdminDashboard from './components/AdminDashboard'; // <-- Import file Admin yang baru dibuat
+import KepsekDashboard from './components/KepsekDashboard';
+import AdminDashboard from './components/AdminDashboard';
 
 export default function App() {
+  // STATE MANAGEMENT
+  const [users, setUsers] = useState(() => {
+    const saved = sessionStorage.getItem('tk_session_users');
+    return saved ? JSON.parse(saved) : SEED_USERS;
+  });
+
   const [students, setStudents] = useState(() => {
     const saved = sessionStorage.getItem('tk_session_students');
     return saved ? JSON.parse(saved) : SEED_STUDENTS;
   });
+
   const [attendance, setAttendance] = useState(() => {
     const saved = sessionStorage.getItem('tk_session_attendance');
     return saved ? JSON.parse(saved) : [];
   });
-  const [user, setUser] = useState(() => {
+
+  const [currentUser, setCurrentUser] = useState(() => {
     const saved = sessionStorage.getItem('tk_session_user');
     return saved ? JSON.parse(saved) : null;
   });
 
+  // EFFECT
+  useEffect(() => { sessionStorage.setItem('tk_session_users', JSON.stringify(users)); }, [users]);
   useEffect(() => { sessionStorage.setItem('tk_session_students', JSON.stringify(students)); }, [students]);
   useEffect(() => { sessionStorage.setItem('tk_session_attendance', JSON.stringify(attendance)); }, [attendance]);
   useEffect(() => { 
-    if(user) sessionStorage.setItem('tk_session_user', JSON.stringify(user));
+    if(currentUser) sessionStorage.setItem('tk_session_user', JSON.stringify(currentUser));
     else sessionStorage.removeItem('tk_session_user');
-  }, [user]);
+  }, [currentUser]);
 
+  // ACTIONS LOGIN & LOGOUT
   const handleLogin = (email, password) => {
-    const found = SEED_USERS.find(u => u.email === email && u.password === password);
-    if (found) { setUser(found); return { success: true }; }
+    const found = users.find(u => u.email === email && u.password === password);
+    if (found) { setCurrentUser(found); return { success: true }; }
     return { success: false, message: 'Email atau Password Salah!' };
   };
 
-  const handleLogout = () => setUser(null);
+  const handleLogout = () => setCurrentUser(null);
 
+  // ACTIONS SISWA
   const markAttendance = (studentId, status, note = '') => {
     const date = new Date().toISOString().split('T')[0];
     const newRecord = { id: Date.now(), studentId, status, date, note };
@@ -56,28 +68,54 @@ export default function App() {
     setStudents(students.filter(s => s.id !== id));
   };
 
+  // ACTIONS USER
+  const addUser = (userData) => {
+    const newUser = { id: Date.now(), ...userData };
+    setUsers([...users, newUser]);
+  };
+
+  const updateUser = (id, userData) => {
+    setUsers(users.map(u => u.id === id ? { ...u, ...userData } : u));
+  };
+
+  const deleteUser = (id) => {
+    if (id === currentUser.id) {
+      alert("Anda tidak dapat menghapus akun Anda sendiri yang sedang digunakan!");
+      return;
+    }
+    setUsers(users.filter(u => u.id !== id));
+  };
+
   const resetDemo = () => {
-    if(window.confirm("Reset data demo? Data inputan akan hilang.")) {
+    if(window.confirm("Reset data demo? Semua perubahan siswa dan akun akan kembali ke kondisi awal.")) {
       sessionStorage.clear();
       window.location.reload();
     }
   };
 
-  if (!user) return <LoginPage onLogin={handleLogin} onReset={resetDemo} />;
+  if (!currentUser) return <LoginPage onLogin={handleLogin} onReset={resetDemo} />;
 
-  // LOGIKA ROUTING
-  // Fungsi ini menentukan dashboard mana yang dirender berdasarkan role
+  // ROUTING
   const renderDashboard = () => {
-    if (user.role === 'teacher') {
-      return <TeacherDashboard user={user} students={students} attendance={attendance} onMark={markAttendance} />;
+    if (currentUser.role === 'teacher') {
+      return <TeacherDashboard user={currentUser} students={students} attendance={attendance} onMark={markAttendance} />;
     } 
-    if (user.role === 'kepsek') {
-      // Kepsek dikasih akses lihat data, tapi tidak dikasih fungsi onAdd, onUpdate, onDelete
+    if (currentUser.role === 'kepsek') {
       return <KepsekDashboard students={students} attendance={attendance} />;
     } 
-    if (user.role === 'admin') {
-      // Admin punya kendali CRUD penuh
-      return <AdminDashboard students={students} attendance={attendance} onAdd={addStudent} onUpdate={updateStudent} onDelete={deleteStudent} />;
+    if (currentUser.role === 'admin') {
+      return (
+        <AdminDashboard 
+          students={students} 
+          users={users}
+          onAddStudent={addStudent} 
+          onUpdateStudent={updateStudent} 
+          onDeleteStudent={deleteStudent}
+          onAddUser={addUser}
+          onUpdateUser={updateUser}
+          onDeleteUser={deleteUser}
+        />
+      );
     }
   };
 
@@ -86,17 +124,17 @@ export default function App() {
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
           <div className="flex items-center gap-3 overflow-hidden">
-             <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${user.role === 'admin' ? 'bg-gradient-to-br from-slate-700 to-black' : user.role === 'kepsek' ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : 'bg-gradient-to-br from-blue-500 to-cyan-500'}`}>
-                {user.name.charAt(0)}
+             <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${currentUser.role === 'admin' ? 'bg-gradient-to-br from-slate-700 to-black' : currentUser.role === 'kepsek' ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : 'bg-gradient-to-br from-blue-500 to-cyan-500'}`}>
+                {currentUser.name.charAt(0)}
              </div>
              <div className="leading-tight overflow-hidden">
-               <h1 className="text-sm font-bold text-slate-900 truncate max-w-[120px] sm:max-w-none">{user.name}</h1>
+               <h1 className="text-sm font-bold text-slate-900 truncate max-w-[120px] sm:max-w-none">{currentUser.name}</h1>
                <div className="flex items-center gap-1">
                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    {user.role === 'admin' ? 'Admin TU' : user.role === 'kepsek' ? 'Kepala Sekolah' : 'Guru'}
+                    {currentUser.role === 'admin' ? 'Admin TU' : currentUser.role === 'kepsek' ? 'Kepala Sekolah' : 'Guru'}
                  </span>
-                 {user.assignedClass !== 'ALL' && (
-                   <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">{user.assignedClass}</span>
+                 {currentUser.assignedClass !== 'ALL' && (
+                   <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">{currentUser.assignedClass}</span>
                  )}
                </div>
              </div>
@@ -110,7 +148,6 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
-        {/* Render tampilan berdasarkan fungsi di atas */}
         {renderDashboard()}
       </main>
     </div>
