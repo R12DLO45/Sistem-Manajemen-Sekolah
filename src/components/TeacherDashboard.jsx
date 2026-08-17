@@ -3,14 +3,11 @@ import { Check, X, AlertCircle, MessageSquareText } from 'lucide-react';
 
 const LiveClock = () => {
   const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
   
   return (
-    <div className="text-right hidden sm:block">
-      <p className="text-3xl font-bold text-slate-800 leading-none">
+    <div className="text-left sm:text-right mt-2 sm:mt-0">
+      <p className="text-2xl sm:text-3xl font-bold text-slate-800 leading-none">
         {time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
       </p>
       <p className="text-xs text-slate-500 font-medium">
@@ -44,15 +41,17 @@ export default function TeacherDashboard({ user, students, attendance, onMark })
 
   return (
     <div className="space-y-6 relative">
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+      {/* Header Responsif: Flex-col di HP, Flex-row di Laptop */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Kelas {user.assignedClass}</h2>
-          <p className="text-slate-500 text-sm">Anda hanya melihat siswa kelas {user.assignedClass}.</p>
+          <p className="text-slate-500 text-sm">Absensi Harian Siswa.</p>
         </div>
         <LiveClock />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Grid Responsif: 1 Col (HP), 2 Col (Tablet), 3 Col (Laptop) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {myStudents.length === 0 ? (
           <div className="col-span-full text-center py-10 text-slate-400 bg-slate-50 rounded-2xl border border-dashed">
             Belum ada siswa di kelas {user.assignedClass}
@@ -81,10 +80,10 @@ export default function TeacherDashboard({ user, students, attendance, onMark })
 
                 <div className="flex bg-slate-50 p-1 rounded-xl gap-1">
                   {['hadir','sakit','alpha'].map(type => (
-                    <button key={type} onClick={() => handleVote(student, type)} className={`flex-1 py-2 rounded-lg transition flex justify-center ${status === type 
+                    <button key={type} onClick={() => handleVote(student, type)} className={`flex-1 py-2 rounded-lg transition flex justify-center items-center ${status === type 
                       ? (type==='hadir'?'bg-white text-green-600 shadow ring-1 ring-green-500': type==='sakit'?'bg-white text-orange-600 shadow ring-1 ring-orange-500':'bg-white text-red-600 shadow ring-1 ring-red-500') 
                       : 'text-slate-400 hover:bg-white'}`}>
-                      {type==='hadir'?<Check size={14} strokeWidth={3}/> : type==='sakit'?<AlertCircle size={14} strokeWidth={3}/> : <X size={14} strokeWidth={3}/>}
+                      {type==='hadir'?<Check size={16} strokeWidth={3}/> : type==='sakit'?<AlertCircle size={16} strokeWidth={3}/> : <X size={16} strokeWidth={3}/>}
                     </button>
                   ))}
                 </div>
@@ -100,18 +99,13 @@ export default function TeacherDashboard({ user, students, attendance, onMark })
               <div className={`p-4 text-white flex justify-between items-center ${modal.type === 'sakit' ? 'bg-orange-500' : 'bg-red-500'}`}>
                  <h3 className="font-bold flex items-center gap-2">
                     {modal.type === 'sakit' ? <AlertCircle size={20}/> : <X size={20}/>}
-                    Keterangan {modal.type === 'sakit' ? 'Sakit' : 'Alpha'}
+                    {modal.type === 'sakit' ? 'Keterangan Sakit' : 'Keterangan Alpha'}
                  </h3>
                  <button onClick={()=>setModal({...modal, show:false})} className="text-white/80 hover:text-white"><X size={20}/></button>
               </div>
               <div className="p-5">
                  <p className="text-sm text-slate-500 mb-2">Catatan untuk <span className="font-bold text-slate-800">{modal.name}</span>:</p>
-                 <textarea 
-                    autoFocus
-                    placeholder="Tulis keterangan..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24 resize-none"
-                    value={noteInput} onChange={e => setNoteInput(e.target.value)}
-                 />
+                 <textarea autoFocus placeholder="Tulis keterangan..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24 resize-none" value={noteInput} onChange={e => setNoteInput(e.target.value)} />
               </div>
               <div className="p-4 bg-slate-50 flex gap-3 justify-end">
                  <button onClick={()=>setModal({...modal, show:false})} className="px-4 py-2 text-slate-500 text-sm font-bold hover:bg-slate-200 rounded-lg transition">Batal</button>
