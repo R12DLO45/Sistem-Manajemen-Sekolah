@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, RotateCcw } from 'lucide-react';
+
 import { SEED_USERS, SEED_STUDENTS } from './data/mockData';
 import LoginPage from './components/LoginPage';
 import TeacherDashboard from './components/TeacherDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import KepsekDashboard from './components/KepsekDashboard'; // <-- Import file Kepsek yang baru di-rename
+import AdminDashboard from './components/AdminDashboard'; // <-- Import file Admin yang baru dibuat
 
 export default function App() {
   const [students, setStudents] = useState(() => {
@@ -63,20 +65,36 @@ export default function App() {
 
   if (!user) return <LoginPage onLogin={handleLogin} onReset={resetDemo} />;
 
+  // LOGIKA ROUTING
+  // Fungsi ini menentukan dashboard mana yang dirender berdasarkan role
+  const renderDashboard = () => {
+    if (user.role === 'teacher') {
+      return <TeacherDashboard user={user} students={students} attendance={attendance} onMark={markAttendance} />;
+    } 
+    if (user.role === 'kepsek') {
+      // Kepsek dikasih akses lihat data, tapi tidak dikasih fungsi onAdd, onUpdate, onDelete
+      return <KepsekDashboard students={students} attendance={attendance} />;
+    } 
+    if (user.role === 'admin') {
+      // Admin punya kendali CRUD penuh
+      return <AdminDashboard students={students} attendance={attendance} onAdd={addStudent} onUpdate={updateStudent} onDelete={deleteStudent} />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
           <div className="flex items-center gap-3 overflow-hidden">
-             {/* Logo Avatar - Ukuran tetap */}
-             <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${user.role === 'admin' ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : 'bg-gradient-to-br from-blue-500 to-cyan-500'}`}>
+             <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-white font-bold shadow-md ${user.role === 'admin' ? 'bg-gradient-to-br from-slate-700 to-black' : user.role === 'kepsek' ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : 'bg-gradient-to-br from-blue-500 to-cyan-500'}`}>
                 {user.name.charAt(0)}
              </div>
-             {/* Info User - Truncate biar gak nabrak di HP */}
              <div className="leading-tight overflow-hidden">
                <h1 className="text-sm font-bold text-slate-900 truncate max-w-[120px] sm:max-w-none">{user.name}</h1>
                <div className="flex items-center gap-1">
-                 <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{user.role === 'admin' ? 'Admin' : 'Guru'}</span>
+                 <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                    {user.role === 'admin' ? 'Admin TU' : user.role === 'kepsek' ? 'Kepala Sekolah' : 'Guru'}
+                 </span>
                  {user.assignedClass !== 'ALL' && (
                    <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">{user.assignedClass}</span>
                  )}
@@ -84,7 +102,6 @@ export default function App() {
              </div>
           </div>
           
-          {/* Tombol Aksi - Shrink 0 biar gak gepeng */}
           <div className="flex gap-2 shrink-0">
             <button onClick={resetDemo} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Reset Demo Data"><RotateCcw size={18} /></button>
             <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><LogOut size={18} /></button>
@@ -93,11 +110,8 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
-        {user.role === 'teacher' ? (
-          <TeacherDashboard user={user} students={students} attendance={attendance} onMark={markAttendance} />
-        ) : (
-          <AdminDashboard students={students} attendance={attendance} onAdd={addStudent} onUpdate={updateStudent} onDelete={deleteStudent} />
-        )}
+        {/* Render tampilan berdasarkan fungsi di atas */}
+        {renderDashboard()}
       </main>
     </div>
   );

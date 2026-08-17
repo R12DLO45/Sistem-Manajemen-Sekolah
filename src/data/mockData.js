@@ -1,10 +1,13 @@
 export const SEED_USERS = [
-  // Guru Kelas A
-  { id: 1, email: 'guru.a@tk.com', password: '123', name: 'Bu Siti (TK A)', role: 'teacher', assignedClass: 'TK A' },
-  // Guru Kelas B
-  { id: 2, email: 'guru.b@tk.com', password: '123', name: 'Bu Rina (TK B)', role: 'teacher', assignedClass: 'TK B' },
-  // Kepala Sekolah
-  { id: 99, email: 'kepsek@tk.com', password: '123', name: 'Pak Budi (Kepsek)', role: 'admin', assignedClass: 'ALL' },
+  // 1. Admin / Tata Usaha (Kendali Penuh)
+  { id: 1, email: 'admin@tk.com', password: '123', name: 'Admin TU', role: 'admin', assignedClass: 'ALL' },
+  
+  // 2. Kepala Sekolah (Hanya Pantau & Laporan)
+  { id: 2, email: 'kepsek@tk.com', password: '123', name: 'Pak Budi (Kepsek)', role: 'kepsek', assignedClass: 'ALL' },
+  
+  // 3. Guru Kelas
+  { id: 3, email: 'guru.a@tk.com', password: '123', name: 'Bu Siti (TK A)', role: 'teacher', assignedClass: 'TK A' },
+  { id: 4, email: 'guru.b@tk.com', password: '123', name: 'Bu Rina (TK B)', role: 'teacher', assignedClass: 'TK B' },
 ];
 
 export const SEED_STUDENTS = [
