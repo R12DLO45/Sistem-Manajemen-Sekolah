@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Users, Check, FileSpreadsheet, Download, AlertCircle, X, Eye } from 'lucide-react';
+import { Users, Check, FileSpreadsheet, Download, AlertCircle, X, Eye, BookOpen, Calendar, MessageSquareText } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function KepsekDashboard({ students, attendance }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  
-  // STATISTIK HARI INI 
+  const [selectedStudent, setSelectedStudent] = useState(null); // Untuk Modal Buku Saku
+
   const today = new Date().toISOString().split('T')[0];
   const totalSiswa = students.length;
   const hadirHariIni = attendance.filter(a => a.date === today && a.status === 'hadir').length;
@@ -49,15 +49,26 @@ export default function KepsekDashboard({ students, attendance }) {
     XLSX.writeFile(wb, `Laporan_Absensi_TK_${selectedMonth}.xlsx`);
   };
 
+  // KALKULASI REKAP SISWA TERPILIH (BUKU SAKU)
+  const getStudentStats = (studentId) => {
+    const records = attendance.filter(a => a.studentId === studentId);
+    const totalHadir = records.filter(a => a.status === 'hadir').length;
+    const totalSakit = records.filter(a => a.status === 'sakit').length;
+    const totalAlpha = records.filter(a => a.status === 'alpha').length;
+    const notes = records.filter(a => a.note && a.note.trim() !== '');
+
+    return { totalHadir, totalSakit, totalAlpha, notes };
+  };
+
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Banner Mode Eksekutif */}
+    <div className="space-y-6 sm:space-y-8 relative">
+      {/* Banner */}
       <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center gap-3 text-indigo-700 text-xs sm:text-sm">
         <Eye size={20} className="shrink-0" />
-        <span>Mode Eksekutif: Anda memiliki akses penuh untuk memantau ringkasan kehadiran dan mengunduh laporan bulanan.</span>
+        <span>Mode Eksekutif: Klik nama siswa di tabel bawah untuk membuka <b>Buku Saku Digital</b> siswa.</span>
       </div>
 
-      {/* 1. Widgets Stats (5 Kartu Ringkasan) */}
+      {/* Widgets Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1 text-indigo-600"><Users size={16}/><span className="text-[10px] font-bold uppercase tracking-wider">Total</span></div>
@@ -70,7 +81,7 @@ export default function KepsekDashboard({ students, attendance }) {
         </div>
 
         <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-2 mb-1 text-orange-500"><AlertCircle size={16}/><span className="text-[10px] font-bold uppercase tracking-wider">Izin</span></div>
+          <div className="flex items-center gap-2 mb-1 text-orange-500"><AlertCircle size={16}/><span className="text-[10px] font-bold uppercase tracking-wider">Izin/Sakit</span></div>
           <p className="text-2xl sm:text-3xl font-bold text-slate-800">{sakitHariIni}</p>
         </div>
 
@@ -85,7 +96,7 @@ export default function KepsekDashboard({ students, attendance }) {
         </div>
       </div>
 
-      {/* 2. Export Excel Section */}
+      {/* Export Excel Section */}
       <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
@@ -99,20 +110,29 @@ export default function KepsekDashboard({ students, attendance }) {
         </div>
       </div>
 
-      {/* 3. Monitoring Tabel Siswa (Read Only) */}
+      {/* Tabel Database Siswa (Bisa Diklik) */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-5 border-b border-slate-50"><h3 className="font-bold text-slate-700">Database Siswa (Pantauan)</h3></div>
+        <div className="p-5 border-b border-slate-50 flex justify-between items-center">
+          <h3 className="font-bold text-slate-700">Database Siswa (Klik Nama untuk Detail)</h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-              <tr><th className="px-6 py-4">Siswa</th><th className="px-6 py-4">Kelas</th><th className="px-6 py-4 text-right">Status Hari Ini</th></tr>
+              <tr><th className="px-6 py-4">Siswa</th><th className="px-6 py-4">Kelas</th><th className="px-6 py-4 text-right">Hari Ini</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {students.map(s => {
                 const record = attendance.find(a => a.studentId === s.id && a.date === today);
                 return (
-                  <tr key={s.id} className="hover:bg-slate-50/80 transition">
-                    <td className="px-6 py-4 font-bold text-slate-700 flex items-center gap-3"><img src={s.photo} className="w-8 h-8 rounded-full bg-slate-100 object-cover"/>{s.name}</td>
+                  <tr key={s.id} onClick={() => setSelectedStudent(s)} className="hover:bg-indigo-50/50 transition cursor-pointer group">
+                    <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-3">
+                      {/* Avatar SVG Otomatis atau Inisial */}
+                      <img src={s.photo} className="w-9 h-9 rounded-full bg-indigo-50 border border-slate-100 object-cover shrink-0"/>
+                      <div>
+                        <p className="group-hover:text-indigo-600 transition">{s.name}</p>
+                        <p className="text-[10px] text-slate-400 font-normal">Klik untuk lihat buku saku</p>
+                      </div>
+                    </td>
                     <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-md text-xs font-bold ${s.class==='TK A'?'bg-blue-50 text-blue-600':'bg-purple-50 text-purple-600'}`}>{s.class}</span></td>
                     <td className="px-6 py-4 text-right">
                       {record ? (
@@ -133,6 +153,80 @@ export default function KepsekDashboard({ students, attendance }) {
           </table>
         </div>
       </div>
+
+      {/* MODAL BUKU SAKU SISWA */}
+      {selectedStudent && (() => {
+        const stats = getStudentStats(selectedStudent.id);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+              
+              {/* Header Modal */}
+              <div className="bg-slate-900 p-6 text-white relative">
+                <button onClick={() => setSelectedStudent(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white transition"><X size={20}/></button>
+                <div className="flex items-center gap-4">
+                  <img src={selectedStudent.photo} className="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-indigo-500/30 object-cover shrink-0"/>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <BookOpen size={16} className="text-indigo-400"/>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Buku Saku Siswa</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mt-0.5">{selectedStudent.name}</h3>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-xs font-bold">{selectedStudent.class}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body Modal - Akumulasi Absen */}
+              <div className="p-6 space-y-6">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Akumulasi Kehadiran</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-green-50 border border-green-100 p-3 rounded-2xl text-center">
+                      <p className="text-2xl font-bold text-green-700">{stats.totalHadir}</p>
+                      <p className="text-[10px] font-bold text-green-600 uppercase">Hadir</p>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-100 p-3 rounded-2xl text-center">
+                      <p className="text-2xl font-bold text-orange-700">{stats.totalSakit}</p>
+                      <p className="text-[10px] font-bold text-orange-600 uppercase">Izin/Sakit</p>
+                    </div>
+                    <div className="bg-red-50 border border-red-100 p-3 rounded-2xl text-center">
+                      <p className="text-2xl font-bold text-red-700">{stats.totalAlpha}</p>
+                      <p className="text-[10px] font-bold text-red-600 uppercase">Alpha</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Riwayat Catatan Sakit/Alpha */}
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Riwayat Catatan Guru</h4>
+                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                    {stats.notes.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl text-center">Belum ada catatan izin/sakit.</p>
+                    ) : (
+                      stats.notes.map(rec => (
+                        <div key={rec.id} className="bg-amber-50/60 border border-amber-100 p-3 rounded-xl flex items-start gap-2.5">
+                          <MessageSquareText size={16} className="text-amber-600 shrink-0 mt-0.5"/>
+                          <div className="text-xs">
+                            <span className="font-bold text-slate-700">{rec.date}: </span>
+                            <span className="text-amber-900 italic">"{rec.note}"</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Buku Saku */}
+              <div className="p-4 bg-slate-50 border-t border-slate-100 text-right">
+                <button onClick={() => setSelectedStudent(null)} className="px-5 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-black transition">Tutup</button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
