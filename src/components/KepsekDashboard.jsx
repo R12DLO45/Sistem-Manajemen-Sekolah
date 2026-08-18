@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Users, Check, FileSpreadsheet, Download, AlertCircle, X, Eye, BookOpen, Calendar, MessageSquareText } from 'lucide-react';
+import { Users, Check, FileSpreadsheet, Download, AlertCircle, X, Eye, BookOpen, MessageSquareText, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function KepsekDashboard({ students, attendance }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [selectedStudent, setSelectedStudent] = useState(null); // Untuk Modal Buku Saku
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const today = new Date().toISOString().split('T')[0];
   const totalSiswa = students.length;
@@ -13,7 +14,8 @@ export default function KepsekDashboard({ students, attendance }) {
   const alphaHariIni = attendance.filter(a => a.date === today && a.status === 'alpha').length;
   const persentase = totalSiswa > 0 ? Math.round((hadirHariIni / totalSiswa) * 100) : 0;
 
-  // EXPORT EXCEL
+  const filteredStudents = students.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
   const handleDownloadReport = () => {
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -49,7 +51,6 @@ export default function KepsekDashboard({ students, attendance }) {
     XLSX.writeFile(wb, `Laporan_Absensi_TK_${selectedMonth}.xlsx`);
   };
 
-  // KALKULASI REKAP SISWA TERPILIH (BUKU SAKU)
   const getStudentStats = (studentId) => {
     const records = attendance.filter(a => a.studentId === studentId);
     const totalHadir = records.filter(a => a.status === 'hadir').length;
@@ -62,13 +63,11 @@ export default function KepsekDashboard({ students, attendance }) {
 
   return (
     <div className="space-y-6 sm:space-y-8 relative">
-      {/* Banner */}
       <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center gap-3 text-indigo-700 text-xs sm:text-sm">
         <Eye size={20} className="shrink-0" />
         <span>Mode Eksekutif: Klik nama siswa di tabel bawah untuk membuka <b>Buku Saku Digital</b> siswa.</span>
       </div>
 
-      {/* Widgets Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1 text-indigo-600"><Users size={16}/><span className="text-[10px] font-bold uppercase tracking-wider">Total</span></div>
@@ -96,7 +95,6 @@ export default function KepsekDashboard({ students, attendance }) {
         </div>
       </div>
 
-      {/* Export Excel Section */}
       <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
@@ -110,58 +108,84 @@ export default function KepsekDashboard({ students, attendance }) {
         </div>
       </div>
 
-      {/* Tabel Database Siswa (Bisa Diklik) */}
+      {/* Tabel Database Siswa */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-5 border-b border-slate-50 flex justify-between items-center">
+        <div className="p-5 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h3 className="font-bold text-slate-700">Database Siswa (Klik Nama untuk Detail)</h3>
+          
+          <div className="relative w-full sm:w-64">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Cari siswa..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-left border-collapse">
             <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-              <tr><th className="px-6 py-4">Siswa</th><th className="px-6 py-4">Kelas</th><th className="px-6 py-4 text-right">Hari Ini</th></tr>
+              <tr>
+                <th className="px-4 sm:px-6 py-4">Siswa</th>
+                <th className="px-2 sm:px-6 py-4 text-center">Kelas</th>
+                <th className="px-4 sm:px-6 py-4 text-right">Hari Ini</th>
+              </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {students.map(s => {
-                const record = attendance.find(a => a.studentId === s.id && a.date === today);
-                return (
-                  <tr key={s.id} onClick={() => setSelectedStudent(s)} className="hover:bg-indigo-50/50 transition cursor-pointer group">
-                    <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-3">
-                      {/* Avatar SVG Otomatis atau Inisial */}
-                      <img src={s.photo} className="w-9 h-9 rounded-full bg-indigo-50 border border-slate-100 object-cover shrink-0"/>
-                      <div>
-                        <p className="group-hover:text-indigo-600 transition">{s.name}</p>
-                        <p className="text-[10px] text-slate-400 font-normal">Klik untuk lihat buku saku</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-md text-xs font-bold ${s.class==='TK A'?'bg-blue-50 text-blue-600':'bg-purple-50 text-purple-600'}`}>{s.class}</span></td>
-                    <td className="px-6 py-4 text-right">
-                      {record ? (
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          record.status === 'hadir' ? 'bg-green-100 text-green-700' :
-                          record.status === 'sakit' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {record.status.toUpperCase()}
+              {filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="px-6 py-8 text-center text-slate-400 text-xs italic">Siswa tidak ditemukan.</td>
+                </tr>
+              ) : (
+                filteredStudents.map(s => {
+                  const record = attendance.find(a => a.studentId === s.id && a.date === today);
+                  return (
+                    <tr key={s.id} onClick={() => setSelectedStudent(s)} className="hover:bg-indigo-50/50 transition cursor-pointer group">
+                      <td className="px-4 sm:px-6 py-4 font-bold text-slate-800 flex items-center gap-2.5 sm:gap-3">
+                        <img src={s.photo} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 border border-slate-100 object-cover shrink-0"/>
+                        <div className="min-w-0">
+                          <p className="group-hover:text-indigo-600 transition truncate text-xs sm:text-sm">{s.name}</p>
+                          <p className="text-[9px] sm:text-[10px] text-slate-400 font-normal truncate">Klik lihat detail</p>
+                        </div>
+                      </td>
+                      
+                      {/* FIX KELAS: Diberi whitespace-nowrap & text-center */}
+                      <td className="px-2 sm:px-6 py-4 text-center whitespace-nowrap">
+                        <span className={`inline-block px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold ${s.class==='TK A'?'bg-blue-50 text-blue-600':'bg-purple-50 text-purple-600'}`}>
+                          {s.class}
                         </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs italic">Belum Diabsen</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+
+                      <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
+                        {record ? (
+                          <span className={`inline-block px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold ${
+                            record.status === 'hadir' ? 'bg-green-100 text-green-700' :
+                            record.status === 'sakit' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {record.status.toUpperCase()}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[10px] sm:text-xs italic">Belum Diabsen</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* MODAL BUKU SAKU SISWA */}
+      {/* MODAL BUKU SAKU */}
       {selectedStudent && (() => {
         const stats = getStudentStats(selectedStudent.id);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-              
-              {/* Header Modal */}
               <div className="bg-slate-900 p-6 text-white relative">
                 <button onClick={() => setSelectedStudent(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white transition"><X size={20}/></button>
                 <div className="flex items-center gap-4">
@@ -177,7 +201,6 @@ export default function KepsekDashboard({ students, attendance }) {
                 </div>
               </div>
 
-              {/* Body Modal - Akumulasi Absen */}
               <div className="p-6 space-y-6">
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Akumulasi Kehadiran</h4>
@@ -197,7 +220,6 @@ export default function KepsekDashboard({ students, attendance }) {
                   </div>
                 </div>
 
-                {/* Riwayat Catatan Sakit/Alpha */}
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Riwayat Catatan Guru</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
@@ -218,7 +240,6 @@ export default function KepsekDashboard({ students, attendance }) {
                 </div>
               </div>
 
-              {/* Footer Buku Saku */}
               <div className="p-4 bg-slate-50 border-t border-slate-100 text-right">
                 <button onClick={() => setSelectedStudent(null)} className="px-5 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-black transition">Tutup</button>
               </div>

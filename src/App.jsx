@@ -6,9 +6,9 @@ import LoginPage from './components/LoginPage';
 import TeacherDashboard from './components/TeacherDashboard';
 import KepsekDashboard from './components/KepsekDashboard';
 import AdminDashboard from './components/AdminDashboard';
+import Toast from './components/Toast';
 
 export default function App() {
-  // STATE MANAGEMENT
   const [users, setUsers] = useState(() => {
     const saved = sessionStorage.getItem('tk_session_users');
     return saved ? JSON.parse(saved) : SEED_USERS;
@@ -29,7 +29,17 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // EFFECT
+  // STATE TOAST NOTIFICATION
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, show: false }));
+  };
+
   useEffect(() => { sessionStorage.setItem('tk_session_users', JSON.stringify(users)); }, [users]);
   useEffect(() => { sessionStorage.setItem('tk_session_students', JSON.stringify(students)); }, [students]);
   useEffect(() => { sessionStorage.setItem('tk_session_attendance', JSON.stringify(attendance)); }, [attendance]);
@@ -38,52 +48,68 @@ export default function App() {
     else sessionStorage.removeItem('tk_session_user');
   }, [currentUser]);
 
-  // ACTIONS LOGIN & LOGOUT
   const handleLogin = (email, password) => {
     const found = users.find(u => u.email === email && u.password === password);
-    if (found) { setCurrentUser(found); return { success: true }; }
+    if (found) { 
+      setCurrentUser(found); 
+      showToast(`Selamat datang, ${found.name}!`, 'success');
+      return { success: true }; 
+    }
     return { success: false, message: 'Email atau Password Salah!' };
   };
 
-  const handleLogout = () => setCurrentUser(null);
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
 
-  // ACTIONS SISWA
+  // ACTIONS SISWA WITH TOAST
   const markAttendance = (studentId, status, note = '') => {
     const date = new Date().toISOString().split('T')[0];
     const newRecord = { id: Date.now(), studentId, status, date, note };
     const filtered = attendance.filter(a => !(a.studentId === studentId && a.date === date));
     setAttendance([...filtered, newRecord]);
+    
+    const student = students.find(s => s.id === studentId);
+    showToast(`Presensi ${student?.name || 'siswa'} tercatat (${status.toUpperCase()})`, 'success');
   };
 
   const addStudent = (name, className) => {
     const newS = { id: Date.now(), name, class: className, photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}` };
     setStudents([...students, newS]);
+    showToast(`Siswa "${name}" berhasil ditambahkan!`, 'success');
   };
 
   const updateStudent = (id, name, className) => {
     setStudents(students.map(s => s.id === id ? { ...s, name, class: className } : s));
+    showToast(`Data siswa "${name}" berhasil diperbarui!`, 'orange');
   };
 
   const deleteStudent = (id) => {
-    setStudents(students.filter(s => s.id !== id));
+    const s = students.find(item => item.id === id);
+    setStudents(students.filter(item => item.id !== id));
+    showToast(`Siswa "${s?.name || ''}" dihapus dari database`, 'error');
   };
 
-  // ACTIONS USER
+  // ACTIONS USER WITH TOAST
   const addUser = (userData) => {
     const newUser = { id: Date.now(), ...userData };
     setUsers([...users, newUser]);
+    showToast(`Akun pengguna "${userData.name}" berhasil dibuat!`, 'success');
   };
 
   const updateUser = (id, userData) => {
     setUsers(users.map(u => u.id === id ? { ...u, ...userData } : u));
+    showToast(`Akun "${userData.name}" berhasil diupdate!`, 'orange');
   };
 
   const deleteUser = (id) => {
     if (id === currentUser.id) {
-      alert("Anda tidak dapat menghapus akun Anda sendiri yang sedang digunakan!");
+      showToast("Gagal: Anda tidak dapat menghapus akun Anda sendiri!", 'error');
       return;
     }
-    setUsers(users.filter(u => u.id !== id));
+    const u = users.find(item => item.id === id);
+    setUsers(users.filter(item => item.id !== id));
+    showToast(`Akun "${u?.name || ''}" berhasil dihapus`, 'error');
   };
 
   const resetDemo = () => {
@@ -95,10 +121,9 @@ export default function App() {
 
   if (!currentUser) return <LoginPage onLogin={handleLogin} onReset={resetDemo} />;
 
-  // ROUTING
   const renderDashboard = () => {
     if (currentUser.role === 'teacher') {
-      return <TeacherDashboard user={currentUser} students={students} attendance={attendance} onMark={markAttendance} />;
+      return <TeacherDashboard user={currentUser} students={students} attendance={attendance} onMark={markAttendance} onToast={showToast} />;
     } 
     if (currentUser.role === 'kepsek') {
       return <KepsekDashboard students={students} attendance={attendance} />;
@@ -150,6 +175,9 @@ export default function App() {
       <main className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
         {renderDashboard()}
       </main>
+
+      {/* RENDER TOAST COMPONENT */}
+      <Toast toast={toast} onClose={hideToast} />
     </div>
   );
 }
