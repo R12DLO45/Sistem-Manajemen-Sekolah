@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X, AlertCircle, MessageSquareText } from 'lucide-react';
+import { Check, X, AlertCircle, MessageSquareText, Share2, Copy } from 'lucide-react';
 
 const LiveClock = () => {
   const [time, setTime] = useState(new Date());
@@ -22,6 +22,7 @@ export default function TeacherDashboard({ user, students, attendance, onMark })
   const myStudents = students.filter(s => s.class === user.assignedClass);
   const [modal, setModal] = useState({ show: false, studentId: null, type: '', name: '' });
   const [noteInput, setNoteInput] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const handleVote = (student, type) => {
     if (type === 'hadir') {
@@ -39,10 +40,48 @@ export default function TeacherDashboard({ user, students, attendance, onMark })
     setNoteInput('');
   };
 
+  // LOGIKA GENERATE FORMAT REKAP WA
+  const generateWARekap = () => {
+    const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    
+    const hadirList = [];
+    const sakitList = [];
+    const alphaList = [];
+
+    myStudents.forEach(s => {
+      const rec = attendance.find(a => a.studentId === s.id && a.date === today);
+      if (rec?.status === 'hadir') hadirList.push(s.name);
+      else if (rec?.status === 'sakit') sakitList.push(`${s.name}${rec.note ? ` (${rec.note})` : ''}`);
+      else if (rec?.status === 'alpha') alphaList.push(`${s.name}${rec.note ? ` (${rec.note})` : ''}`);
+    });
+
+    const text = `*LAPORAN PRESENSI KELAS ${user.assignedClass}*\n` +
+      `📅 *Tanggal:* ${dateFormatted}\n\n` +
+      `🟢 *Hadir (${hadirList.length}):*\n${hadirList.length ? hadirList.map(n => `• ${n}`).join('\n') : '-'}\n\n` +
+      `🟡 *Izin/Sakit (${sakitList.length}):*\n${sakitList.length ? sakitList.map(n => `• ${n}`).join('\n') : '-'}\n\n` +
+      `🔴 *Alpha (${alphaList.length}):*\n${alphaList.length ? alphaList.map(n => `• ${n}`).join('\n') : '-'}\n\n` +
+      `_Sistem Informasi Kehadiran TK_`;
+
+    return text;
+  };
+
+  const handleCopyWA = () => {
+    const text = generateWARekap();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareWA = () => {
+    const text = generateWARekap();
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="space-y-6 relative">
-      {/* Header Responsif: Flex-col di HP, Flex-row di Laptop */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+      {/* Header Responsif */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Kelas {user.assignedClass}</h2>
           <p className="text-slate-500 text-sm">Absensi Harian Siswa.</p>
@@ -50,7 +89,29 @@ export default function TeacherDashboard({ user, students, attendance, onMark })
         <LiveClock />
       </div>
 
-      {/* Grid Responsif: 1 Col (HP), 2 Col (Tablet), 3 Col (Laptop) */}
+      {/* Tombol Akses Cepat WA Rekap */}
+      <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="text-emerald-900 text-xs sm:text-sm">
+          <p className="font-bold">Fitur Bagikan ke WhatsApp Group</p>
+          <p className="text-emerald-700 text-xs">Salin atau langsung kirim format rekap absen kelas hari ini ke grup WA orang tua.</p>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button 
+            onClick={handleCopyWA}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+          >
+            <Copy size={14} /> {copied ? 'Tersalin!' : 'Salin Teks'}
+          </button>
+          <button 
+            onClick={handleShareWA}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-200"
+          >
+            <Share2 size={14} /> Kirim ke WA
+          </button>
+        </div>
+      </div>
+
+      {/* Grid Siswa */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {myStudents.length === 0 ? (
           <div className="col-span-full text-center py-10 text-slate-400 bg-slate-50 rounded-2xl border border-dashed">
