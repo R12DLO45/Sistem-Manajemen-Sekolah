@@ -1,50 +1,101 @@
 import React, { useState } from 'react';
-import { AlertCircle, School } from 'lucide-react';
+import { Lock, Mail, RotateCcw, Sun, Moon } from 'lucide-react';
 
-export default function LoginPage({ onLogin, onReset }) {
+export default function LoginPage({ onLogin, onReset, darkMode, onToggleDark }) {
   const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [err, setErr] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const res = onLogin(email, password);
+    if (!res.success) {
+      setErrorMsg(res.message);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 font-sans text-slate-800">
-       <div className="hidden lg:flex w-1/2 bg-indigo-600 items-center justify-center relative overflow-hidden">
-         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 opacity-90"></div>
-         <div className="relative z-10 text-center text-white px-10">
-           <h1 className="text-5xl font-bold mb-4">SiHadir TK</h1>
-           <p className="text-indigo-100 text-lg">Platform Absensi Modern & Terpisah Per Kelas.</p>
-         </div>
-       </div>
-       <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-         <div className="w-full max-w-md">
-           <div className="mb-8 text-center lg:text-left">
-             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 mb-4 lg:hidden"><School size={24} /></div>
-             <h2 className="text-3xl font-bold text-slate-900">Selamat Datang</h2>
-             <p className="text-slate-500 mt-2">Masuk sesuai Akun Kelas masing-masing.</p>
-           </div>
-           <div className="space-y-5">
-             <input value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Email (guru.a@tk.com)" />
-             <input type="password" value={pass} onChange={e=>setPass(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Password (123)" />
-             {err && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 border border-red-100"><AlertCircle size={16} /> {err}</div>}
-             <button onClick={()=>{setLoading(true); setTimeout(()=>{const res=onLogin(email, pass); if(!res.success) setErr(res.message); setLoading(false);}, 500)}} disabled={loading} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70">
-               {loading ? 'Memproses...' : 'Masuk Aplikasi'}
-             </button>
-           </div>
-           <div className="mt-8 text-center text-xs text-slate-400">
-             <p>Akun Demo Guru:</p>
-             <div className="mt-2 flex flex-wrap justify-center gap-2">
-               <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-mono">guru.a@tk.com / 123</span>
-               <span className="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded font-mono">guru.b@tk.com / 123</span>
-             </div>
-             <p className="mt-2">Akun Kepala Sekolah:</p>
-             <div className="mt-1">
-                <span className="bg-slate-100 px-2 py-1 rounded border font-mono">kepsek@tk.com / 123</span>
-             </div>
-             <button onClick={onReset} className="mt-4 text-indigo-500 underline hover:text-indigo-700 block mx-auto">Reset Data</button>
-           </div>
-         </div>
-       </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-4 transition-colors duration-200 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <button 
+          onClick={onToggleDark} 
+          className="p-2 text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-xl transition"
+          title={darkMode ? 'Ubah ke Mode Terang' : 'Ubah ke Mode Gelap'}
+        >
+          {darkMode ? <Sun size={20} className="text-amber-400" /> : <Moon size={20} />}
+        </button>
+        <button 
+          onClick={onReset} 
+          className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition" 
+          title="Reset Demo Data"
+        >
+          <RotateCcw size={20} />
+        </button>
+      </div>
+
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 p-8 space-y-6 transition-colors">
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-lg shadow-indigo-200 dark:shadow-none">
+            TK
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">SiHadir TK</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Sistem Informasi Presensi & Kehadiran Siswa</p>
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs text-center font-bold">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Email Akses</label>
+            <div className="relative">
+              <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="email" 
+                required
+                placeholder="nama@tk.com" 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Password</label>
+            <div className="relative">
+              <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="password" 
+                required
+                placeholder="••••••••" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit"
+            className="w-full py-3.5 bg-slate-900 dark:bg-indigo-600 hover:bg-black dark:hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg transition"
+          >
+            Masuk Ke Sistem
+          </button>
+        </form>
+
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Akun Demo Standar:</p>
+          <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 space-y-0.5 font-mono">
+            <p>Admin TU: admin@tk.com (Pass: 123)</p>
+            <p>Kepsek: kepsek@tk.com (Pass: 123)</p>
+            <p>Guru TK A: guru.a@tk.com (Pass: 123)</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

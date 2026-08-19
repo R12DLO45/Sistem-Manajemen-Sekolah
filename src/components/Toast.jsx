@@ -6,7 +6,7 @@ export default function Toast({ toast, onClose }) {
     if (toast.show) {
       const timer = setTimeout(() => {
         onClose();
-      }, 3000); // Otomatis hilang setelah 3 detik
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [toast, onClose]);
@@ -26,7 +26,6 @@ export default function Toast({ toast, onClose }) {
   };
 
   return (
-    // Mengubah posisi dari 'bottom-5' menjadi 'top-20'
     <div className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm w-full px-2 animate-in slide-in-from-top-5 duration-300">
       <div className={`flex items-center justify-between gap-3 p-4 rounded-2xl border shadow-xl backdrop-blur-md ${bgColors[toast.type] || bgColors.success}`}>
         <div className="flex items-center gap-3">
