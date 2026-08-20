@@ -10,9 +10,19 @@ import AdminDashboard from './components/AdminDashboard';
 import Toast from './components/Toast';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('dashboard');
-  
+  const [activeMenu, setActiveMenu] = useState('absensi');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('tk_theme') === 'dark');
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    if (window.innerWidth < 768) {
+      setMobileSidebarOpen(prev => !prev);
+    } else {
+      setSidebarCollapsed(prev => !prev);
+    }
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -50,13 +60,17 @@ export default function App() {
     const found = users.find(u => (u.email === email || u.name === email) && u.password === password);
     if (found) { 
       setCurrentUser(found); 
+      setActiveMenu('dashboard'); // RESET MENU KE DASHBOARD SAAT LOGIN BERHASIL
       showToast(`Selamat datang, ${found.name}!`, 'success');
       return { success: true }; 
     }
     return { success: false, message: 'Email atau Password Salah!' };
   };
 
-  const handleLogout = () => setCurrentUser(null);
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setActiveMenu('dashboard'); // RESET MENU KE DASHBOARD SAAT LOGOUT
+  };
 
   const markAttendance = (studentId, status, note = '') => {
     const date = new Date().toISOString().split('T')[0];
@@ -106,24 +120,35 @@ export default function App() {
     showToast(`Akun "${u?.name || ''}" berhasil dihapus`, 'error');
   };
 
-  const resetDemo = () => {
-    if(window.confirm("Reset data demo? Semua perubahan siswa dan akun akan kembali ke kondisi awal.")) {
-      sessionStorage.clear();
-      window.location.reload();
-    }
-  };
-
   if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} onReset={resetDemo} darkMode={darkMode} onToggleDark={toggleDarkMode} />;
+    return <LoginPage onLogin={handleLogin} onReset={() => { sessionStorage.clear(); window.location.reload(); }} darkMode={darkMode} onToggleDark={toggleDarkMode} />;
   }
 
-  // Content Router Berdasarkan Menu Sidebar
   const renderContent = () => {
     switch (activeMenu) {
       case 'dashboard':
-        return <MainDashboard user={currentUser} students={students} attendance={attendance} setActiveMenu={setActiveMenu} />;
+        return (
+          <MainDashboard 
+            user={currentUser} 
+            students={students} 
+            attendance={attendance} 
+            setActiveMenu={setActiveMenu} 
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+          />
+        );
       case 'absensi':
-        return <TeacherDashboard user={currentUser} students={students} attendance={attendance} onMark={markAttendance} onToast={showToast} />;
+        return (
+          <TeacherDashboard 
+            user={currentUser} 
+            students={students} 
+            attendance={attendance} 
+            onMark={markAttendance} 
+            onToast={showToast} 
+            onLogout={handleLogout} 
+            onToggleSidebar={toggleSidebar} 
+          />
+        );
       case 'data-anak':
       case 'kelas':
       case 'laporan':
@@ -142,26 +167,37 @@ export default function App() {
           />
         );
       default:
-        return <MainDashboard user={currentUser} students={students} attendance={attendance} setActiveMenu={setActiveMenu} />;
+        return (
+          <MainDashboard 
+            user={currentUser} 
+            students={students} 
+            attendance={attendance} 
+            setActiveMenu={setActiveMenu} 
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+          />
+        );
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200">
+    <div className="h-screen w-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
       
-      {/* Sidebar Kiri */}
+      {/* Sidebar Navigasi Kiri dengan Prop Dark Mode */}
       <Sidebar 
         user={currentUser} 
         activeMenu={activeMenu} 
         setActiveMenu={setActiveMenu} 
-        onLogout={handleLogout}
+        collapsed={sidebarCollapsed}
+        onToggleSidebar={toggleSidebar}
+        mobileOpen={mobileSidebarOpen}
+        setMobileOpen={setMobileSidebarOpen}
         darkMode={darkMode}
         onToggleDark={toggleDarkMode}
-        onReset={resetDemo}
       />
 
-      {/* Konten Utama Kanan */}
-      <main className="flex-1 p-6 sm:p-8 max-w-7xl overflow-y-auto">
+      {/* Area Utama Kanan */}
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 pt-3 sm:pt-4 w-full min-w-0 h-full overflow-y-auto">
         {renderContent()}
       </main>
 
