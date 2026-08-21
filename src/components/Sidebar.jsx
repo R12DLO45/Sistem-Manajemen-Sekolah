@@ -5,15 +5,15 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar({ 
-  user, 
-  activeMenu, 
-  setActiveMenu, 
-  collapsed, 
-  onToggleSidebar,
-  mobileOpen, 
-  setMobileOpen,
-  darkMode,
-  onToggleDark
+  user = { name: 'User', role: 'teacher' }, 
+  activeMenu = 'dashboard', 
+  setActiveMenu = () => {}, 
+  collapsed = false, 
+  onToggleSidebar = () => {},
+  mobileOpen = false, 
+  setMobileOpen = () => {},
+  darkMode = false,
+  onToggleDark = () => {}
 }) {
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchCurrentX, setTouchCurrentX] = useState(0);
@@ -45,7 +45,8 @@ export default function Sidebar({
     { id: 'laporan', label: 'Laporan', icon: FileText, roles: ['admin', 'kepsek'] },
   ];
 
-  const allowedMenus = allMenus.filter(m => m.roles.includes(user.role));
+  const userRole = user?.role || 'teacher';
+  const allowedMenus = allMenus.filter(m => m.roles.includes(userRole));
 
   return (
     <>
@@ -71,9 +72,8 @@ export default function Sidebar({
         <div className="flex flex-col h-full justify-between p-0">
           <div>
             
-            {/* HEADER SIDEBAR */}
+            {/* Header Sidebar */}
             <div className="p-4 border-b border-slate-50 dark:border-slate-800/60 flex items-center justify-between min-h-[65px] relative">
-              
               <div className={`items-center gap-3 min-w-0 ${collapsed ? 'flex md:hidden' : 'flex'}`}>
                 <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-200 dark:shadow-none shrink-0">
                   🏠
@@ -84,7 +84,7 @@ export default function Sidebar({
                 </div>
               </div>
 
-              {/* TOMBOL HAMBURGER LIPAT (DESKTOP) */}
+              {/* Tombol Lipat Desktop */}
               <button 
                 onClick={onToggleSidebar}
                 className={`hidden md:flex p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
@@ -95,7 +95,7 @@ export default function Sidebar({
                 <Menu size={20} />
               </button>
 
-              {/* TOMBOL SILANG X (MOBILE) */}
+              {/* Tombol Tutup Mobile */}
               <button 
                 onClick={() => setMobileOpen(false)} 
                 className="p-1.5 text-slate-400 hover:text-slate-600 md:hidden ml-auto"
@@ -104,7 +104,7 @@ export default function Sidebar({
               </button>
             </div>
 
-            {/* NAVIGASI MENU */}
+            {/* Menu Navigasi */}
             <nav className="p-3 space-y-1.5">
               {allowedMenus.map(menu => {
                 const Icon = menu.icon;
@@ -127,7 +127,6 @@ export default function Sidebar({
                     }`}
                   >
                     <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
-                    
                     <span className={`truncate ${collapsed ? 'inline md:hidden' : 'inline'}`}>
                       {menu.label}
                     </span>
@@ -137,10 +136,8 @@ export default function Sidebar({
             </nav>
           </div>
 
-          {/* BAGIAN BAWAH SIDEBAR: TOGGLE DARK MODE + CARD BANTUAN */}
+          {/* Bagian Bawah: Toggle Dark Mode & Help Card */}
           <div className="p-3 mt-auto space-y-2">
-            
-            {/* Tombol Dark Mode Toggle */}
             <button
               onClick={onToggleDark}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 transition ${
@@ -159,13 +156,11 @@ export default function Sidebar({
                 </span>
               </div>
 
-              {/* Indicator Pill */}
               <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${darkMode ? 'bg-indigo-600' : 'bg-slate-300'} ${collapsed ? 'hidden md:hidden' : 'block'}`}>
                 <div className={`w-3 h-3 rounded-full bg-white transition-transform ${darkMode ? 'translate-x-4' : 'translate-x-0'}`} />
               </div>
             </button>
 
-            {/* Box Bantuan */}
             <div className={`p-4 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl space-y-1.5 ${collapsed ? 'block md:hidden' : 'block'}`}>
               <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
                 <Headphones size={18} />

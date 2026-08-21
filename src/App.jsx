@@ -5,12 +5,13 @@ import LoginPage from './components/LoginPage';
 import Sidebar from './components/Sidebar';
 import MainDashboard from './components/MainDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
+import StudentDataPage from './components/StudentDataPage';
 import KepsekDashboard from './components/KepsekDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import Toast from './components/Toast';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('absensi');
+  const [activeMenu, setActiveMenu] = useState('data-anak');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('tk_theme') === 'dark');
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -37,11 +38,42 @@ export default function App() {
 
   const toggleDarkMode = () => setDarkMode(prev => !prev);
 
-  // Data States
-  const [users, setUsers] = useState(() => JSON.parse(sessionStorage.getItem('tk_session_users')) || SEED_USERS);
-  const [students, setStudents] = useState(() => JSON.parse(sessionStorage.getItem('tk_session_students')) || SEED_STUDENTS);
-  const [attendance, setAttendance] = useState(() => JSON.parse(sessionStorage.getItem('tk_session_attendance')) || []);
-  const [currentUser, setCurrentUser] = useState(() => JSON.parse(sessionStorage.getItem('tk_session_user')) || null);
+  // Fallback safe load states
+  const [users, setUsers] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('tk_session_users');
+      return saved ? JSON.parse(saved) : SEED_USERS;
+    } catch {
+      return SEED_USERS;
+    }
+  });
+
+  const [students, setStudents] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('tk_session_students');
+      return saved ? JSON.parse(saved) : SEED_STUDENTS;
+    } catch {
+      return SEED_STUDENTS;
+    }
+  });
+
+  const [attendance, setAttendance] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('tk_session_attendance');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('tk_session_user');
+      return saved ? JSON.parse(saved) : (SEED_USERS && SEED_USERS[0] ? SEED_USERS[0] : null);
+    } catch {
+      return SEED_USERS && SEED_USERS[0] ? SEED_USERS[0] : null;
+    }
+  });
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -60,7 +92,7 @@ export default function App() {
     const found = users.find(u => (u.email === email || u.name === email) && u.password === password);
     if (found) { 
       setCurrentUser(found); 
-      setActiveMenu('dashboard'); // RESET MENU KE DASHBOARD SAAT LOGIN BERHASIL
+      setActiveMenu('dashboard');
       showToast(`Selamat datang, ${found.name}!`, 'success');
       return { success: true }; 
     }
@@ -69,7 +101,7 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
-    setActiveMenu('dashboard'); // RESET MENU KE DASHBOARD SAAT LOGOUT
+    setActiveMenu('dashboard');
   };
 
   const markAttendance = (studentId, status, note = '') => {
@@ -82,31 +114,35 @@ export default function App() {
     showToast(`Presensi ${student?.name || 'siswa'} tercatat (${status.toUpperCase()})`, 'success');
   };
 
-  const addStudent = (name, className) => {
-    const newS = { id: Date.now(), name, class: className, photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}` };
-    setStudents([...students, newS]);
-    showToast(`Siswa "${name}" berhasil ditambahkan!`, 'success');
+  const addStudent = (newStudentData) => {
+    const newS = { 
+      id: Date.now(), 
+      ...newStudentData,
+      photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newStudentData.name || Date.now()}` 
+    };
+    setStudents(prev => [...prev, newS]);
+    showToast(`Siswa "${newStudentData.name}" berhasil ditambahkan!`, 'success');
   };
 
-  const updateStudent = (id, name, className) => {
-    setStudents(students.map(s => s.id === id ? { ...s, name, class: className } : s));
-    showToast(`Data siswa "${name}" berhasil diperbarui!`, 'orange');
+  const updateStudent = (id, updatedData) => {
+    setStudents(prev => prev.map(s => s.id === id ? { ...s, ...updatedData } : s));
+    showToast(`Data siswa berhasil diperbarui!`, 'orange');
   };
 
   const deleteStudent = (id) => {
     const s = students.find(item => item.id === id);
-    setStudents(students.filter(item => item.id !== id));
+    setStudents(prev => prev.filter(item => item.id !== id));
     showToast(`Siswa "${s?.name || ''}" dihapus dari database`, 'error');
   };
 
   const addUser = (userData) => {
     const newUser = { id: Date.now(), ...userData };
-    setUsers([...users, newUser]);
+    setUsers(prev => [...prev, newUser]);
     showToast(`Akun "${userData.name}" berhasil dibuat!`, 'success');
   };
 
   const updateUser = (id, userData) => {
-    setUsers(users.map(u => u.id === id ? { ...u, ...userData } : u));
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...userData } : u));
     showToast(`Akun "${userData.name}" berhasil diupdate!`, 'orange');
   };
 
@@ -116,7 +152,7 @@ export default function App() {
       return;
     }
     const u = users.find(item => item.id === id);
-    setUsers(users.filter(item => item.id !== id));
+    setUsers(prev => prev.filter(item => item.id !== id));
     showToast(`Akun "${u?.name || ''}" berhasil dihapus`, 'error');
   };
 
@@ -150,6 +186,17 @@ export default function App() {
           />
         );
       case 'data-anak':
+        return (
+          <StudentDataPage 
+            user={currentUser} 
+            students={students} 
+            onAddStudent={addStudent}
+            onUpdateStudent={updateStudent}
+            onDeleteStudent={deleteStudent}
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+          />
+        );
       case 'kelas':
       case 'laporan':
         return <KepsekDashboard students={students} attendance={attendance} />;
@@ -168,11 +215,12 @@ export default function App() {
         );
       default:
         return (
-          <MainDashboard 
+          <StudentDataPage 
             user={currentUser} 
             students={students} 
-            attendance={attendance} 
-            setActiveMenu={setActiveMenu} 
+            onAddStudent={addStudent}
+            onUpdateStudent={updateStudent}
+            onDeleteStudent={deleteStudent}
             onLogout={handleLogout}
             onToggleSidebar={toggleSidebar}
           />
@@ -183,7 +231,7 @@ export default function App() {
   return (
     <div className="h-screen w-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
       
-      {/* Sidebar Navigasi Kiri dengan Prop Dark Mode */}
+      {/* Sidebar Navigasi */}
       <Sidebar 
         user={currentUser} 
         activeMenu={activeMenu} 
