@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { SEED_USERS, SEED_STUDENTS } from './data/mockData';
 
@@ -6,12 +7,13 @@ import Sidebar from './components/Sidebar';
 import MainDashboard from './components/MainDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 import StudentDataPage from './components/StudentDataPage';
+import ClassDataPage from './components/ClassDataPage'; // <-- IMPORT INI
 import KepsekDashboard from './components/KepsekDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import Toast from './components/Toast';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('data-anak');
+  const [activeMenu, setActiveMenu] = useState('kelas'); // atau 'dashboard'
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('tk_theme') === 'dark');
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -38,7 +40,7 @@ export default function App() {
 
   const toggleDarkMode = () => setDarkMode(prev => !prev);
 
-  // Fallback safe load states
+  // States
   const [users, setUsers] = useState(() => {
     try {
       const saved = sessionStorage.getItem('tk_session_users');
@@ -198,6 +200,17 @@ export default function App() {
           />
         );
       case 'kelas':
+        return (
+          <ClassDataPage 
+            user={currentUser}
+            students={students}
+            users={users}
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+            onToast={showToast}
+            setActiveMenu={setActiveMenu}
+          />
+        );
       case 'laporan':
         return <KepsekDashboard students={students} attendance={attendance} />;
       case 'guru':
@@ -215,14 +228,14 @@ export default function App() {
         );
       default:
         return (
-          <StudentDataPage 
-            user={currentUser} 
-            students={students} 
-            onAddStudent={addStudent}
-            onUpdateStudent={updateStudent}
-            onDeleteStudent={deleteStudent}
+          <ClassDataPage 
+            user={currentUser}
+            students={students}
+            users={users}
             onLogout={handleLogout}
             onToggleSidebar={toggleSidebar}
+            onToast={showToast}
+            setActiveMenu={setActiveMenu}
           />
         );
     }
@@ -231,7 +244,7 @@ export default function App() {
   return (
     <div className="h-screen w-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
       
-      {/* Sidebar Navigasi */}
+      {/* Sidebar Navigasi Kiri */}
       <Sidebar 
         user={currentUser} 
         activeMenu={activeMenu} 
