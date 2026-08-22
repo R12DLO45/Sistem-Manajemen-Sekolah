@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { SEED_USERS, SEED_STUDENTS } from './data/mockData';
 
@@ -7,13 +6,13 @@ import Sidebar from './components/Sidebar';
 import MainDashboard from './components/MainDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 import StudentDataPage from './components/StudentDataPage';
-import ClassDataPage from './components/ClassDataPage'; // <-- IMPORT INI
+import ClassDataPage from './components/ClassDataPage';
+import TeacherDataPage from './components/TeacherDataPage'; // <-- IMPORT HALAMAN GURU
 import KepsekDashboard from './components/KepsekDashboard';
-import AdminDashboard from './components/AdminDashboard';
 import Toast from './components/Toast';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('kelas'); // atau 'dashboard'
+  const [activeMenu, setActiveMenu] = useState('guru'); // atau 'dashboard'
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('tk_theme') === 'dark');
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -211,31 +210,32 @@ export default function App() {
             setActiveMenu={setActiveMenu}
           />
         );
-      case 'laporan':
-        return <KepsekDashboard students={students} attendance={attendance} />;
       case 'guru':
         return (
-          <AdminDashboard 
-            students={students} 
+          <TeacherDataPage 
+            user={currentUser}
             users={users}
-            onAddStudent={addStudent} 
-            onUpdateStudent={updateStudent} 
-            onDeleteStudent={deleteStudent}
             onAddUser={addUser}
             onUpdateUser={updateUser}
             onDeleteUser={deleteUser}
-          />
-        );
-      default:
-        return (
-          <ClassDataPage 
-            user={currentUser}
-            students={students}
-            users={users}
             onLogout={handleLogout}
             onToggleSidebar={toggleSidebar}
             onToast={showToast}
-            setActiveMenu={setActiveMenu}
+          />
+        );
+      case 'laporan':
+        return <KepsekDashboard students={students} attendance={attendance} />;
+      default:
+        return (
+          <TeacherDataPage 
+            user={currentUser}
+            users={users}
+            onAddUser={addUser}
+            onUpdateUser={updateUser}
+            onDeleteUser={deleteUser}
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+            onToast={showToast}
           />
         );
     }
