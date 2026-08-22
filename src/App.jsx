@@ -7,12 +7,13 @@ import MainDashboard from './components/MainDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 import StudentDataPage from './components/StudentDataPage';
 import ClassDataPage from './components/ClassDataPage';
-import TeacherDataPage from './components/TeacherDataPage'; // <-- IMPORT HALAMAN GURU
+import TeacherDataPage from './components/TeacherDataPage';
+import ParentDataPage from './components/ParentDataPage';
 import KepsekDashboard from './components/KepsekDashboard';
 import Toast from './components/Toast';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('guru'); // atau 'dashboard'
+  const [activeMenu, setActiveMenu] = useState('orang-tua');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('tk_theme') === 'dark');
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -85,7 +86,7 @@ export default function App() {
   useEffect(() => { sessionStorage.setItem('tk_session_students', JSON.stringify(students)); }, [students]);
   useEffect(() => { sessionStorage.setItem('tk_session_attendance', JSON.stringify(attendance)); }, [attendance]);
   useEffect(() => { 
-    if(currentUser) sessionStorage.setItem('tk_session_user', JSON.stringify(currentUser));
+    if (currentUser) sessionStorage.setItem('tk_session_user', JSON.stringify(currentUser));
     else sessionStorage.removeItem('tk_session_user');
   }, [currentUser]);
 
@@ -158,7 +159,14 @@ export default function App() {
   };
 
   if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} onReset={() => { sessionStorage.clear(); window.location.reload(); }} darkMode={darkMode} onToggleDark={toggleDarkMode} />;
+    return (
+      <LoginPage 
+        onLogin={handleLogin} 
+        onReset={() => { sessionStorage.clear(); window.location.reload(); }} 
+        darkMode={darkMode} 
+        onToggleDark={toggleDarkMode} 
+      />
+    );
   }
 
   const renderContent = () => {
@@ -223,19 +231,27 @@ export default function App() {
             onToast={showToast}
           />
         );
+      case 'orang-tua':
+        return (
+          <ParentDataPage 
+            user={currentUser}
+            students={students}
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+            onToast={showToast}
+          />
+        );
       case 'laporan':
         return <KepsekDashboard students={students} attendance={attendance} />;
       default:
         return (
-          <TeacherDataPage 
-            user={currentUser}
-            users={users}
-            onAddUser={addUser}
-            onUpdateUser={updateUser}
-            onDeleteUser={deleteUser}
+          <MainDashboard 
+            user={currentUser} 
+            students={students} 
+            attendance={attendance} 
+            setActiveMenu={setActiveMenu} 
             onLogout={handleLogout}
             onToggleSidebar={toggleSidebar}
-            onToast={showToast}
           />
         );
     }

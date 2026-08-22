@@ -1,8 +1,7 @@
-// src/components/Sidebar.jsx
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, ClipboardCheck, Users, School, 
-  UserCheck, FileText, Headphones, X, Menu, Sun, Moon
+  UserCheck, Users2, FileText, Headphones, X, Menu, Sun, Moon
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -42,7 +41,8 @@ export default function Sidebar({
     { id: 'absensi', label: 'Absensi', icon: ClipboardCheck, roles: ['admin', 'teacher'] },
     { id: 'data-anak', label: 'Data Anak', icon: Users, roles: ['admin', 'kepsek', 'teacher'] },
     { id: 'kelas', label: 'Kelas', icon: School, roles: ['admin', 'kepsek'] },
-    { id: 'guru', label: 'Guru', icon: UserCheck, roles: ['admin'] },
+    { id: 'guru', label: 'Guru', icon: UserCheck, roles: ['admin', 'kepsek'] },
+    { id: 'orang-tua', label: 'Orang Tua', icon: Users2, roles: ['admin', 'kepsek', 'teacher'] },
     { id: 'laporan', label: 'Laporan', icon: FileText, roles: ['admin', 'kepsek'] },
   ];
 
@@ -59,7 +59,7 @@ export default function Sidebar({
         />
       )}
 
-      {/* Sidebar Principal */}
+      {/* Sidebar Utama */}
       <aside 
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -81,7 +81,7 @@ export default function Sidebar({
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 leading-none truncate">TK CERIA</h1>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 truncate">Sistem Absensi</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 truncate">Sistem Absensi & Administrasi</p>
                 </div>
               </div>
 
