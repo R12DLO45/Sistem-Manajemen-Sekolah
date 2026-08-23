@@ -9,12 +9,12 @@ import StudentDataPage from './components/StudentDataPage';
 import ClassDataPage from './components/ClassDataPage';
 import TeacherDataPage from './components/TeacherDataPage';
 import ParentDataPage from './components/ParentDataPage';
-import KepsekDashboard from './components/KepsekDashboard';
 import ReportPage from './components/ReportPage';
+import SettingsPage from './components/SettingsPage';
 import Toast from './components/Toast';
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('orang-tua');
+  const [activeMenu, setActiveMenu] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('tk_theme') === 'dark');
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -41,7 +41,7 @@ export default function App() {
 
   const toggleDarkMode = () => setDarkMode(prev => !prev);
 
-  // States
+  // States Penyimpanan Data
   const [users, setUsers] = useState(() => {
     try {
       const saved = sessionStorage.getItem('tk_session_users');
@@ -146,7 +146,10 @@ export default function App() {
 
   const updateUser = (id, userData) => {
     setUsers(prev => prev.map(u => u.id === id ? { ...u, ...userData } : u));
-    showToast(`Akun "${userData.name}" berhasil diupdate!`, 'orange');
+    if (currentUser?.id === id) {
+      setCurrentUser(prev => ({ ...prev, ...userData }));
+    }
+    showToast(`Akun "${userData.name}" berhasil diperbarui!`, 'orange');
   };
 
   const deleteUser = (id) => {
@@ -253,6 +256,31 @@ export default function App() {
             onToast={showToast}
           />
         );
+      case 'pengaturan':
+        return (
+          <SettingsPage 
+            user={currentUser}
+            students={students}
+            attendance={attendance}
+            darkMode={darkMode}
+            onToggleDark={toggleDarkMode}
+            onUpdateUser={updateUser}
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+            onToast={showToast}
+          />
+        );
+      default:
+        return (
+          <MainDashboard 
+            user={currentUser} 
+            students={students} 
+            attendance={attendance} 
+            setActiveMenu={setActiveMenu} 
+            onLogout={handleLogout}
+            onToggleSidebar={toggleSidebar}
+          />
+        );
     }
   };
 
@@ -272,7 +300,7 @@ export default function App() {
         onToggleDark={toggleDarkMode}
       />
 
-      {/* Area Utama Kanan */}
+      {/* Area Konten Utama Kanan */}
       <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 pt-3 sm:pt-4 w-full min-w-0 h-full overflow-y-auto">
         {renderContent()}
       </main>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, ClipboardCheck, Users, School, 
-  UserCheck, Users2, FileText, Headphones, X, Menu, Sun, Moon
+  UserCheck, Users2, FileText, Settings, Headphones, 
+  X, Menu, Sun, Moon 
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -22,16 +23,11 @@ export default function Sidebar({
     setTouchStartX(e.targetTouches[0].clientX);
     setTouchCurrentX(e.targetTouches[0].clientX);
   };
-
   const handleTouchMove = (e) => {
     setTouchCurrentX(e.targetTouches[0].clientX);
   };
-
   const handleTouchEnd = () => {
-    const swipeDistance = touchStartX - touchCurrentX;
-    if (swipeDistance > 50) {
-      setMobileOpen(false);
-    }
+    if (touchStartX - touchCurrentX > 50) setMobileOpen(false);
     setTouchStartX(0);
     setTouchCurrentX(0);
   };
@@ -44,6 +40,7 @@ export default function Sidebar({
     { id: 'guru', label: 'Guru', icon: UserCheck, roles: ['admin', 'kepsek'] },
     { id: 'orang-tua', label: 'Orang Tua', icon: Users2, roles: ['admin', 'kepsek', 'teacher'] },
     { id: 'laporan', label: 'Laporan', icon: FileText, roles: ['admin', 'kepsek'] },
+    { id: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin', 'kepsek', 'teacher'] },
   ];
 
   const userRole = user?.role || 'teacher';
@@ -73,36 +70,39 @@ export default function Sidebar({
         <div className="flex flex-col h-full justify-between p-0">
           <div>
             
-            {/* Header Sidebar */}
-            <div className="p-4 border-b border-slate-50 dark:border-slate-800/60 flex items-center justify-between min-h-[65px] relative">
-              <div className={`items-center gap-3 min-w-0 ${collapsed ? 'flex md:hidden' : 'flex'}`}>
-                <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-200 dark:shadow-none shrink-0">
-                  🏠
+            {/* Header Sidebar Dibuat Lebih Rapi */}
+            <div className={`p-4 border-b border-slate-50 dark:border-slate-800/60 flex items-center min-h-[70px] ${collapsed ? 'justify-center' : 'justify-between'}`}>
+              
+              {/* Tampil jika tidak dilipat (atau saat di mobile) */}
+              {(!collapsed || mobileOpen) && (
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-200 dark:shadow-none shrink-0">
+                    🏠
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 leading-none truncate">TK CERIA</h1>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 truncate">Sistem Absensi</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h1 className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 leading-none truncate">TK CERIA</h1>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 truncate">Sistem Absensi & Administrasi</p>
-                </div>
-              </div>
+              )}
 
-              {/* Tombol Lipat Desktop */}
+              {/* Tombol Menu Desktop */}
               <button 
                 onClick={onToggleSidebar}
-                className={`hidden md:flex p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
-                  collapsed ? 'mx-auto' : 'ml-auto'
-                }`}
+                className="hidden md:flex p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white rounded-xl transition shrink-0"
                 title={collapsed ? "Buka Sidebar" : "Lipat Sidebar"}
               >
-                <Menu size={20} />
+                <Menu size={18} />
               </button>
 
-              {/* Tombol Tutup Mobile */}
+              {/* Tombol Tutup Mobile (X) */}
               <button 
                 onClick={() => setMobileOpen(false)} 
-                className="p-1.5 text-slate-400 hover:text-slate-600 md:hidden ml-auto"
+                className="md:hidden p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition shrink-0"
               >
                 <X size={20} />
               </button>
+
             </div>
 
             {/* Menu Navigasi */}
@@ -128,7 +128,7 @@ export default function Sidebar({
                     }`}
                   >
                     <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
-                    <span className={`truncate ${collapsed ? 'inline md:hidden' : 'inline'}`}>
+                    <span className={`truncate ${collapsed ? 'hidden' : 'inline'}`}>
                       {menu.label}
                     </span>
                   </button>
@@ -152,29 +152,27 @@ export default function Sidebar({
                 ) : (
                   <Moon size={18} className="text-indigo-600 shrink-0" />
                 )}
-                <span className={`truncate ${collapsed ? 'inline md:hidden' : 'inline'}`}>
+                <span className={`truncate ${collapsed ? 'hidden' : 'inline'}`}>
                   {darkMode ? "Mode Terang" : "Mode Gelap"}
                 </span>
               </div>
 
-              <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${darkMode ? 'bg-indigo-600' : 'bg-slate-300'} ${collapsed ? 'hidden md:hidden' : 'block'}`}>
-                <div className={`w-3 h-3 rounded-full bg-white transition-transform ${darkMode ? 'translate-x-4' : 'translate-x-0'}`} />
-              </div>
+              {!collapsed && (
+                <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${darkMode ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                  <div className={`w-3 h-3 rounded-full bg-white transition-transform ${darkMode ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+              )}
             </button>
 
-            <div className={`p-4 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl space-y-1.5 ${collapsed ? 'block md:hidden' : 'block'}`}>
-              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
-                <Headphones size={18} />
-                <span>Butuh Bantuan?</span>
-              </div>
-              <p className="text-[10px] text-indigo-900/70 dark:text-indigo-300 font-medium leading-relaxed">
-                Hubungi admin jika ada kendala.
-              </p>
-            </div>
-
-            {collapsed && (
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl text-center text-indigo-600 dark:text-indigo-400 hidden md:block" title="Butuh Bantuan? Hubungi Admin">
-                <Headphones size={20} className="mx-auto" />
+            {!collapsed && (
+              <div className="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl space-y-1.5">
+                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                  <Headphones size={18} />
+                  <span>Butuh Bantuan?</span>
+                </div>
+                <p className="text-[10px] text-indigo-900/70 dark:text-indigo-300 font-medium leading-relaxed">
+                  Hubungi admin jika ada kendala.
+                </p>
               </div>
             )}
           </div>
