@@ -51,11 +51,19 @@ export default function TeacherDashboard({
   const [noteModal, setNoteModal] = useState({ show: false, studentId: null, name: '' });
   const [tempNote, setTempNote] = useState('');
 
+  // Helper pencocokan kelas (support format "TK A" atau "Kelas A")
+  const matchClass = (sClass, targetClass) => {
+    if (!sClass) return false;
+    const cleanS = sClass.replace('Kelas ', 'TK ');
+    const cleanTarget = targetClass.replace('Kelas ', 'TK ');
+    return cleanS === cleanTarget;
+  };
+
   const filteredStudents = students
-    .filter(s => s.class === selectedClass)
+    .filter(s => matchClass(s.class, selectedClass))
     .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const classStudents = students.filter(s => s.class === selectedClass);
+  const classStudents = students.filter(s => matchClass(s.class, selectedClass));
   let countHadir = 0, countIzin = 0, countSakit = 0, countBelum = 0;
 
   classStudents.forEach(s => {
@@ -79,7 +87,7 @@ export default function TeacherDashboard({
       updated[s.id] = { ...updated[s.id], status: 'hadir' };
     });
     setLocalAttendance(updated);
-    if(onToast) onToast(`Semua anak ${selectedClass} ditandai HADIR`, 'success');
+    if(onToast) onToast(`Semua anak ${selectedClass.replace('TK ', 'Kelas ')} ditandai HADIR`, 'success');
   };
 
   const handleReset = () => {
@@ -88,7 +96,7 @@ export default function TeacherDashboard({
       updated[s.id] = { status: 'belum', note: '' };
     });
     setLocalAttendance(updated);
-    if(onToast) onToast(`Absensi ${selectedClass} di-reset`, 'orange');
+    if(onToast) onToast(`Absensi ${selectedClass.replace('TK ', 'Kelas ')} di-reset`, 'orange');
   };
 
   const openNoteModal = (student) => {
@@ -111,16 +119,14 @@ export default function TeacherDashboard({
         onMark(s.id, item.status, item.note);
       }
     });
-    if(onToast) onToast(`Absensi ${selectedClass} berhasil disimpan!`, 'success');
+    if(onToast) onToast(`Absensi ${selectedClass.replace('TK ', 'Kelas ')} berhasil disimpan!`, 'success');
   };
 
   return (
     <div className="space-y-5 w-full">
       
-      {/* 1. TOP NAVBAR NAiK DIKIT & SIMETRIS */}
+      {/* 1. TOP NAVBAR */}
       <header className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between transition-all">
-        
-        {/* Tombol Hamburger Khusus Layar HP */}
         <button 
           onClick={onToggleSidebar}
           className="md:hidden p-2 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-white rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm transition"
@@ -201,6 +207,7 @@ export default function TeacherDashboard({
             >
               <option value="TK A">Kelas A</option>
               <option value="TK B">Kelas B</option>
+              <option value="TK C">Kelas C</option>
             </select>
             <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">∨</span>
           </div>
@@ -296,7 +303,7 @@ export default function TeacherDashboard({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-10 text-center text-slate-400 italic">Anak tidak ditemukan di {selectedClass}.</td>
+                  <td colSpan="5" className="px-6 py-10 text-center text-slate-400 italic">Anak tidak ditemukan di {selectedClass.replace('TK ', 'Kelas ')}.</td>
                 </tr>
               ) : (
                 filteredStudents.map((s, index) => {
@@ -307,7 +314,7 @@ export default function TeacherDashboard({
                     <tr key={s.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                       <td className="px-6 py-4 font-bold text-slate-400 text-center">{index + 1}</td>
                       <td className="px-4 py-4 text-center">
-                        <img src={s.photo} className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 object-cover mx-auto"/>
+                        <img src={s.photo} className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 object-cover mx-auto" alt={s.name} />
                       </td>
                       <td className="px-6 py-4 font-bold text-slate-800 dark:text-white text-sm">
                         {s.name}
@@ -383,7 +390,8 @@ export default function TeacherDashboard({
           </table>
         </div>
 
-       <div className="p-4 sm:p-5 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center gap-2.5">
+        {/* Footer Simpan Absensi */}
+        <div className="p-4 sm:p-5 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center gap-2.5">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 w-full max-w-md">
             <button 
               onClick={handleSaveAll} 

@@ -10,6 +10,7 @@ import ClassDataPage from './components/ClassDataPage';
 import TeacherDataPage from './components/TeacherDataPage';
 import ParentDataPage from './components/ParentDataPage';
 import KepsekDashboard from './components/KepsekDashboard';
+import ReportPage from './components/ReportPage';
 import Toast from './components/Toast';
 
 export default function App() {
@@ -242,16 +243,14 @@ export default function App() {
           />
         );
       case 'laporan':
-        return <KepsekDashboard students={students} attendance={attendance} />;
-      default:
         return (
-          <MainDashboard 
-            user={currentUser} 
-            students={students} 
-            attendance={attendance} 
-            setActiveMenu={setActiveMenu} 
+          <ReportPage 
+            user={currentUser}
+            students={students}
+            attendance={attendance}
             onLogout={handleLogout}
             onToggleSidebar={toggleSidebar}
+            onToast={showToast}
           />
         );
     }
