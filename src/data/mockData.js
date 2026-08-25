@@ -1,18 +1,64 @@
-export const SEED_STUDENTS = [
-  { id: 1, name: 'Aira Putri', class: 'TK A', gender: 'Perempuan', birthDate: '12 Jan 2021', parentName: 'Ibu Melati', parentPhone: '0812-3456-7890', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aira' },
-  { id: 2, name: 'Bima Pratama', class: 'TK A', gender: 'Laki-laki', birthDate: '05 Mar 2021', parentName: 'Bapak Andi', parentPhone: '0812-3456-7891', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bima' },
-  { id: 3, name: 'Cinta Meilani', class: 'TK A', gender: 'Perempuan', birthDate: '20 Apr 2021', parentName: 'Ibu Sinta', parentPhone: '0812-3456-7892', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Cinta' },
-  { id: 4, name: 'Daffa Alfarizi', class: 'TK A', gender: 'Laki-laki', birthDate: '11 Mei 2021', parentName: 'Bapak Rizi', parentPhone: '0812-3456-7893', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daffa' },
-  { id: 5, name: 'Eka Nur A.', class: 'TK B', gender: 'Perempuan', birthDate: '09 Jun 2021', parentName: 'Ibu Nurul', parentPhone: '0812-3456-7894', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eka' },
-  { id: 6, name: 'Fathan Rafi', class: 'TK B', gender: 'Laki-laki', birthDate: '18 Jul 2021', parentName: 'Bapak Fajar', parentPhone: '0812-3456-7895', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fathan' },
-  { id: 7, name: 'Ghina Azzahra', class: 'TK B', gender: 'Perempuan', birthDate: '22 Agt 2021', parentName: 'Ibu Azizah', parentPhone: '0812-3456-7896', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ghina' },
-  { id: 8, name: 'Hafidz Ramadhan', class: 'TK C', gender: 'Laki-laki', birthDate: '02 Sep 2021', parentName: 'Bapak Dimas', parentPhone: '0812-3456-7897', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hafidz' },
-  { id: 9, name: 'Intan Permata', class: 'TK C', gender: 'Perempuan', birthDate: '14 Okt 2021', parentName: 'Ibu Permata', parentPhone: '0812-3456-7898', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Intan' },
-  { id: 10, name: 'Jovan Arkan', class: 'TK C', gender: 'Laki-laki', birthDate: '28 Nov 2021', parentName: 'Bapak Arkan', parentPhone: '0812-3456-7899', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jovan' },
+export const SEED_USERS = [
+  // 1. Admin / Tata Usaha
+  { id: 1, 
+    name: 'Admin TU', 
+    email: 'admin@tk.com', 
+    password: 'admin123', 
+    role: 'admin', 
+    assignedClass: 'ALL', 
+    nip: '198501012010011001',
+    phone: '081234567001' 
+  },
+  { id: 2, 
+    name: 'Bu Sari, S.Pd', 
+    email: 'sari@tk.com', 
+    password: 'sari123', 
+    role: 'teacher', 
+    assignedClass: 'Kelas A', 
+    nip: '199002152015022002',
+    phone: '081234567002' 
+  },
+  { 
+    id: 3, 
+    name: 'Bu Rini, S.Pd', 
+    email: 'rini@tk.com', 
+    password: 'rini123', 
+    role: 'teacher', 
+    assignedClass: 'Kelas B', 
+    nip: '199208202018032003',
+    phone: '081234567003'
+  },
+  { 
+    id: 4, 
+    name: 'Pak Budi, S.Pd', 
+    email: 'budi@tk.com', 
+    password: 'budi123', 
+    role: 'teacher', 
+    assignedClass: 'Kelas C', 
+    nip: '198811102014041004',
+    phone: '081234567004'
+  },
+  { 
+    id: 5, 
+    name: 'Hj. Siti Nurjanah, M.Pd', 
+    email: 'kepsek@tk.com', 
+    password: 'kepsek123', 
+    role: 'kepsek', 
+    assignedClass: 'ALL', 
+    nip: '197503121998032001',
+    phone: '081234567005'
+  }
 ];
 
-export const SEED_USERS = [
-  { id: 1, name: 'Bu Sari', email: 'guru@tk.com', password: '123', role: 'teacher', assignedClass: 'TK A' },
-  { id: 2, name: 'Pak Budi', email: 'kepsek@tk.com', password: '123', role: 'kepsek', assignedClass: 'ALL' },
-  { id: 3, name: 'Admin TU', email: 'admin@tk.com', password: '123', role: 'admin', assignedClass: 'ALL' },
+export const SEED_STUDENTS = [
+  { id: 101, name: 'Aira Putri', class: 'Kelas A', gender: 'P', parentName: 'Hendra Pratama', phone: '081234567890', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aira' },
+  { id: 102, name: 'Bima Pratama', class: 'Kelas A', gender: 'L', parentName: 'Agus Santoso', phone: '081234567891', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bima' },
+  { id: 103, name: 'Cinta Meilani', class: 'Kelas A', gender: 'P', parentName: 'Rudi Hartono', phone: '081234567892', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Cinta' },
+  { id: 104, name: 'Daffa Alfarizi', class: 'Kelas A', gender: 'L', parentName: 'Bambang Irawan', phone: '081234567893', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daffa' },
+  { id: 105, name: 'Eka Nur A.', class: 'Kelas B', gender: 'P', parentName: 'Suryanto', phone: '081234567894', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eka' },
+  { id: 106, name: 'Fathan Rafi', class: 'Kelas B', gender: 'L', parentName: 'Dedi Kurniawan', phone: '081234567895', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fathan' },
+  { id: 107, name: 'Ghina Azzahra', class: 'Kelas B', gender: 'P', parentName: 'Wahyu Hidayat', phone: '081234567896', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ghina' },
+  { id: 108, name: 'Hafidz Ramadhan', class: 'Kelas C', gender: 'L', parentName: 'M. Taufik', phone: '081234567897', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hafidz' },
+  { id: 109, name: 'Intan Permata', class: 'Kelas C', gender: 'P', parentName: 'Joko Widodo', phone: '081234567898', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Intan' },
+  { id: 110, name: 'Jovan Arkan', class: 'Kelas C', gender: 'L', parentName: 'Ahmad Syaifullah', phone: '081234567899', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jovan' }
 ];

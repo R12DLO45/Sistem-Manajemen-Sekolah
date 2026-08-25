@@ -1,25 +1,24 @@
-// src/components/ClassDataPage.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
-  School, Users, UserCheck, Calendar, Plus, 
-  Search, Download, Edit, Trash2, ChevronLeft, ChevronRight, 
-  Menu, LogOut, ChevronDown, ShieldCheck, X, Users2
+  School, User, Plus, Trash2, Edit2, X, 
+  Search, Users, ChevronDown, Menu, LogOut, 
+  CheckCircle2, Eye, MapPin, Clock, 
+  ShieldCheck, HelpCircle, UserCheck, Sparkles
 } from 'lucide-react';
 
 export default function ClassDataPage({ 
-  user = { name: 'Guru', role: 'teacher', assignedClass: 'TK A' }, 
+  user = { name: 'Admin TU', role: 'admin', assignedClass: 'ALL' }, 
   students = [], 
-  users = [],
+  users = [], 
   onLogout = () => {}, 
-  onToggleSidebar = () => {},
+  onToggleSidebar = () => {}, 
   onToast = () => {},
   setActiveMenu = () => {}
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const isAdmin = user?.role === 'admin';
+  const isKepsek = user?.role === 'kepsek';
 
-  // Profile Dropdown State
+  // Profile Header Dropdown
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
@@ -33,141 +32,146 @@ export default function ClassDataPage({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // State Data Kelas (Local Storage / Session)
-  const [classes, setClasses] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem('tk_session_classes');
-      return saved ? JSON.parse(saved) : [
-        { id: 1, name: 'Kelas A', code: 'TK A', teacherName: 'Bu Sari', academicYear: '2025/2026', status: 'Aktif', color: 'indigo' },
-        { id: 2, name: 'Kelas B', code: 'TK B', teacherName: 'Bu Rina', academicYear: '2025/2026', status: 'Aktif', color: 'emerald' },
-        { id: 3, name: 'Kelas C', code: 'TK C', teacherName: 'Bu Dewi', academicYear: '2025/2026', status: 'Aktif', color: 'amber' },
-      ];
-    } catch {
-      return [
-        { id: 1, name: 'Kelas A', code: 'TK A', teacherName: 'Bu Sari', academicYear: '2025/2026', status: 'Aktif', color: 'indigo' },
-        { id: 2, name: 'Kelas B', code: 'TK B', teacherName: 'Bu Rina', academicYear: '2025/2026', status: 'Aktif', color: 'emerald' },
-        { id: 3, name: 'Kelas C', code: 'TK C', teacherName: 'Bu Dewi', academicYear: '2025/2026', status: 'Aktif', color: 'amber' },
-      ];
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRoomFilter, setSelectedRoomFilter] = useState('ALL');
+
+  // Master Data Rombel Kelas
+  const [classes, setClasses] = useState([
+    { 
+      id: 'TK A', 
+      name: 'Kelas A', 
+      alias: 'TK A', 
+      room: 'Ruang Mawar (Lantai 1)', 
+      capacity: 20, 
+      schedule: '07:30 - 11:00 WIB',
+      academicYear: '2026/2027',
+      description: 'Kelompok bermain awal anak usia 4 - 5 tahun fokus motorik & pengenalan huruf.'
+    },
+    { 
+      id: 'TK B', 
+      name: 'Kelas B', 
+      alias: 'TK B', 
+      room: 'Ruang Melati (Lantai 1)', 
+      capacity: 20, 
+      schedule: '07:30 - 11:30 WIB',
+      academicYear: '2026/2027',
+      description: 'Kelompok persiapan usia 5 - 6 tahun fokus calistung dasar & kemandirian.'
+    },
+    { 
+      id: 'TK C', 
+      name: 'Kelas C', 
+      alias: 'TK C', 
+      room: 'Ruang Anggrek (Lantai 2)', 
+      capacity: 15, 
+      schedule: '08:00 - 11:30 WIB',
+      academicYear: '2026/2027',
+      description: 'Kelompok minat & bakat khusus serta penguatan pra-sekolah dasar.'
     }
-  });
+  ]);
 
-  useEffect(() => {
-    sessionStorage.setItem('tk_session_classes', JSON.stringify(classes));
-  }, [classes]);
+  // Modal States
+  const [detailModal, setDetailModal] = useState({ show: false, classData: null, students: [], teacher: null });
+  const [formModal, setFormModal] = useState({ show: false, isEdit: false, targetId: null });
+  const [deleteModal, setDeleteModal] = useState({ show: false, classId: null, className: '' });
 
-  // Modal State
-  const [modalType, setModalType] = useState(null); // 'create' | 'edit' | null
-  const [activeClass, setActiveClass] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    code: '',
-    teacherName: 'Bu Sari',
-    academicYear: '2025/2026',
-    status: 'Aktif',
-    color: 'indigo'
+    room: '',
+    capacity: 20,
+    schedule: '07:30 - 11:00 WIB',
+    description: ''
   });
 
-  // Filter List Kelas
-  const filteredClasses = classes.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.teacherName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Statistik Rombel
+  const stats = useMemo(() => {
+    const safeStudents = Array.isArray(students) ? students : [];
+    const totalRombel = classes.length;
+    const totalCapacity = classes.reduce((acc, c) => acc + (Number(c.capacity) || 0), 0);
+    const totalEnrolled = safeStudents.length;
+    const avgPerClass = totalRombel > 0 ? (totalEnrolled / totalRombel).toFixed(1) : 0;
+    const occupancyRate = totalCapacity > 0 ? ((totalEnrolled / totalCapacity) * 100).toFixed(1) : 0;
 
-  // Perhitungan Statistik
-  const totalClasses = classes.length;
-  const totalStudents = students.length;
-  const totalTeachers = new Set(classes.map(c => c.teacherName)).size;
-  const activeYear = '2025/2026';
+    return { totalRombel, totalCapacity, totalEnrolled, avgPerClass, occupancyRate };
+  }, [classes, students]);
 
-  // Helper Hitung Anak Per Kelas
-  const getStudentCount = (classCode, className) => {
-    return students.filter(s => s.class === classCode || s.class === className).length;
-  };
+  // Filter Kelas
+  const filteredClasses = useMemo(() => {
+    return classes.filter(c => {
+      const matchSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          c.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          c.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchRoom = selectedRoomFilter === 'ALL' || c.room.includes(selectedRoomFilter);
+      return matchSearch && matchRoom;
+    });
+  }, [classes, searchQuery, selectedRoomFilter]);
 
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredClasses.length / itemsPerPage) || 1;
-  const paginatedClasses = filteredClasses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const openCreateModal = () => {
+  const handleOpenAdd = () => {
     setFormData({
       name: '',
-      code: '',
-      teacherName: users.find(u => u.role === 'teacher')?.name || 'Bu Sari',
-      academicYear: '2025/2026',
-      status: 'Aktif',
-      color: 'indigo'
+      room: '',
+      capacity: 20,
+      schedule: '07:30 - 11:00 WIB',
+      description: ''
     });
-    setModalType('create');
+    setFormModal({ show: true, isEdit: false, targetId: null });
   };
 
-  const openEditModal = (cls) => {
-    setActiveClass(cls);
+  const handleOpenEdit = (cls) => {
     setFormData({
       name: cls.name,
-      code: cls.code,
-      teacherName: cls.teacherName,
-      academicYear: cls.academicYear,
-      status: cls.status,
-      color: cls.color || 'indigo'
+      room: cls.room,
+      capacity: cls.capacity,
+      schedule: cls.schedule,
+      description: cls.description
     });
-    setModalType('edit');
+    setFormModal({ show: true, isEdit: true, targetId: cls.id });
   };
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name.trim()) {
+      if (onToast) onToast('Nama rombel kelas wajib diisi!', 'error');
+      return;
+    }
 
-    if (modalType === 'create') {
+    if (formModal.isEdit) {
+      setClasses(prev => prev.map(c => c.id === formModal.targetId ? { ...c, ...formData } : c));
+      if (onToast) onToast(`Konfigurasi ${formData.name} berhasil diperbarui!`, 'success');
+    } else {
       const newClass = {
-        id: Date.now(),
-        ...formData,
-        code: formData.code || formData.name
+        id: `TK-${Date.now()}`,
+        alias: formData.name,
+        academicYear: '2026/2027',
+        ...formData
       };
-      setClasses([...classes, newClass]);
-      if (onToast) onToast(`Kelas "${formData.name}" berhasil dibuat!`, 'success');
-    } else if (modalType === 'edit' && activeClass) {
-      setClasses(classes.map(c => c.id === activeClass.id ? { ...c, ...formData } : c));
-      if (onToast) onToast(`Data ${formData.name} diperbarui!`, 'orange');
+      setClasses(prev => [...prev, newClass]);
+      if (onToast) onToast(`Rombel ${formData.name} berhasil ditambahkan!`, 'success');
     }
-    setModalType(null);
+
+    setFormModal({ show: false, isEdit: false, targetId: null });
   };
 
-  const handleDeleteClass = (id, name) => {
-    setClasses(classes.filter(c => c.id !== id));
-    if (onToast) onToast(`Kelas "${name}" berhasil dihapus`, 'error');
+  const handleConfirmDelete = () => {
+    if (deleteModal.classId) {
+      setClasses(prev => prev.filter(c => c.id !== deleteModal.classId));
+      if (onToast) onToast(`Rombel "${deleteModal.className}" berhasil dihapus`, 'error');
+      setDeleteModal({ show: false, classId: null, className: '' });
+    }
   };
 
-  const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "No,Nama Kelas,Wali Kelas,Jumlah Anak,Tahun Ajaran,Status\n" +
-      classes.map((c, i) => `${i+1},${c.name},${c.teacherName},${getStudentCount(c.code, c.name)},${c.academicYear},${c.status}`).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `data_kelas_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    if (onToast) onToast('Data kelas berhasil diexport ke CSV!', 'success');
-  };
-
-  // Badge Warna Inisial Kelas Box
-  const getClassBoxBadge = (name = '', color = 'indigo') => {
-    const initial = name.replace('Kelas ', '').charAt(0) || 'A';
-    if (initial === 'A' || color === 'indigo') {
-      return { bg: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300', label: initial };
-    }
-    if (initial === 'B' || color === 'emerald') {
-      return { bg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300', label: initial };
-    }
-    return { bg: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300', label: initial };
+  const openClassDetail = (cls) => {
+    const safeStudents = Array.isArray(students) ? students : [];
+    const safeUsers = Array.isArray(users) ? users : [];
+    const classStudents = safeStudents.filter(s => (s.class || '').replace('TK ', 'Kelas ') === cls.name);
+    const waliKelas = safeUsers.find(u => u.role === 'teacher' && (u.assignedClass || '').replace('TK ', 'Kelas ') === cls.name);
+    setDetailModal({ show: true, classData: cls, students: classStudents, teacher: waliKelas });
   };
 
   return (
-    <div className="space-y-5 w-full">
+    <div className="space-y-5 w-full font-sans pb-10">
       
-      {/* 1. TOP NAVBAR STICKY MELAYANG */}
+      {/* 1. TOP NAVBAR */}
       <header className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between transition-all">
         <button 
           onClick={onToggleSidebar}
@@ -177,7 +181,6 @@ export default function ClassDataPage({
           <Menu size={22} />
         </button>
 
-        {/* User Profile Dropdown */}
         <div className="relative ml-auto" ref={profileRef}>
           <button 
             onClick={() => setProfileOpen(!profileOpen)}
@@ -185,7 +188,7 @@ export default function ClassDataPage({
           >
             <img 
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'User'}`} 
-              alt={user?.name || 'User'} 
+              alt="Avatar" 
               className="w-8 h-8 rounded-full bg-indigo-100 border border-slate-200 dark:border-slate-700 object-cover"
             />
             <div className="hidden sm:block pr-1">
@@ -201,9 +204,8 @@ export default function ClassDataPage({
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 sm:hidden">
                 <p className="text-xs font-bold text-slate-800 dark:text-white">{user?.name || 'User'}</p>
-                <p className="text-[10px] text-slate-400">{user?.email || 'Wali Kelas'}</p>
+                <p className="text-[10px] text-slate-400">{user?.email || 'User'}</p>
               </div>
-              
               <button 
                 onClick={() => { setProfileOpen(false); onLogout(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition text-left"
@@ -215,341 +217,483 @@ export default function ClassDataPage({
         </div>
       </header>
 
-      {/* 2. TITLE BAR & TOMBOL TAMBAH KELAS */}
+      {/* 2. TITLE BAR */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full pt-1">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Kelas</h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">Kelola data kelas yang ada di TK Ceria.</p>
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Data Rombongan Belajar (Kelas)
+          </h2>
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+            Manajemen rombel, penetapan ruangan kelas, kapasitas tampung, dan penugasan wali kelas.
+          </p>
         </div>
 
-        <button 
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition shadow-md shadow-indigo-200 dark:shadow-none self-start sm:self-auto"
-        >
-          <Plus size={16} /> Tambah Kelas
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition shadow-md shadow-indigo-200 dark:shadow-none self-start sm:self-auto"
+          >
+            <Plus size={16} />
+            <span>Tambah Rombel Baru</span>
+          </button>
+        )}
       </div>
 
-      {/* 3. 4 KARTU STATISTIK RINGKASAN PERSIS GAMBAR */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
-        
-        {/* Total Kelas */}
+      {/* 3. 4 KARTU STATISTIK AGREGAT ROMBEL */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full">
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <School size={24} />
+          <div className="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <School size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400">Total Kelas</p>
-            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{totalClasses}</p>
-            <p className="text-[10px] text-slate-400 font-medium">kelas</p>
+            <p className="text-[10px] font-bold text-slate-400">Total Rombel</p>
+            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{stats.totalRombel}</p>
+            <p className="text-[10px] text-slate-400 font-medium">kelas aktif</p>
           </div>
         </div>
 
-        {/* Total Anak */}
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Users size={24} />
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Users size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400">Total Anak</p>
-            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{totalStudents}</p>
-            <p className="text-[10px] text-slate-400 font-medium">anak</p>
+            <p className="text-[10px] font-bold text-slate-400">Total Siswa</p>
+            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{stats.totalEnrolled}</p>
+            <p className="text-[10px] text-emerald-600 font-bold">anak didik</p>
           </div>
         </div>
 
-        {/* Wali Kelas */}
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <UserCheck size={24} />
+          <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <UserCheck size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400">Wali Kelas</p>
-            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{totalTeachers}</p>
-            <p className="text-[10px] text-slate-400 font-medium">guru</p>
+            <p className="text-[10px] font-bold text-slate-400">Rata-Rata per Kelas</p>
+            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{stats.avgPerClass}</p>
+            <p className="text-[10px] text-slate-400 font-medium">anak / rombel</p>
           </div>
         </div>
 
-        {/* Tahun Ajaran */}
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <Calendar size={24} />
+          <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <Sparkles size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400">Tahun Ajaran</p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white leading-tight">{activeYear}</p>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Aktif</p>
+            <p className="text-[10px] font-bold text-slate-400">Kapasitas Terisi</p>
+            <p className="text-2xl font-extrabold text-slate-800 dark:text-white leading-tight">{stats.occupancyRate}%</p>
+            <p className="text-[10px] text-slate-400 font-medium">dari {stats.totalCapacity} kursi</p>
           </div>
         </div>
-
       </div>
 
-      {/* 4. BARIS PENCARIAN & TOMBOL EXPORT */}
-      <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-3">
-        
-        {/* Search Bar Input */}
-        <div className="relative flex-1 max-w-md w-full">
+      {/* 4. TOOLBAR PENCARIAN & FILTER */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Cari kelas..." 
+            placeholder="Cari nama rombel, ruangan..." 
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl text-xs outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
-        {/* Tombol Export */}
-        <button 
-          onClick={handleExport}
-          className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
-        >
-          <Download size={14} /> Export
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <select 
+            value={selectedRoomFilter}
+            onChange={e => setSelectedRoomFilter(e.target.value)}
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold outline-none cursor-pointer"
+          >
+            <option value="ALL">Semua Lantai</option>
+            <option value="Lantai 1">Lantai 1</option>
+            <option value="Lantai 2">Lantai 2</option>
+          </select>
 
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+            <button 
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Grid
+            </button>
+            <button 
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Tabel
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* 5. TABEL DATA KELAS */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden w-full">
-        
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-xs text-left border-collapse">
-            <thead className="bg-slate-50/70 dark:bg-slate-800/40 text-indigo-900/60 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-              <tr>
-                <th className="px-6 py-4 w-12 text-center">No.</th>
-                <th className="px-6 py-4">Nama Kelas</th>
-                <th className="px-6 py-4">Wali Kelas</th>
-                <th className="px-6 py-4">Jumlah Anak</th>
-                <th className="px-6 py-4">Tahun Ajaran</th>
-                <th className="px-6 py-4 text-center w-28">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {paginatedClasses.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic">
-                    Tidak ada data kelas yang cocok dengan pencarian.
-                  </td>
-                </tr>
-              ) : (
-                paginatedClasses.map((cls, index) => {
-                  const no = (currentPage - 1) * itemsPerPage + index + 1;
-                  const badge = getClassBoxBadge(cls.name, cls.color);
-                  const studentCount = getStudentCount(cls.code, cls.name);
+      {/* 5. GRID VIEW */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredClasses.map((cls, idx) => {
+            const safeStudents = Array.isArray(students) ? students : [];
+            const safeUsers = Array.isArray(users) ? users : [];
+            const classStudents = safeStudents.filter(s => (s.class || '').replace('TK ', 'Kelas ') === cls.name);
+            const waliKelas = safeUsers.find(u => u.role === 'teacher' && (u.assignedClass || '').replace('TK ', 'Kelas ') === cls.name);
+            const studentCount = classStudents.length;
+            const capacityPct = ((studentCount / (cls.capacity || 20)) * 100).toFixed(0);
 
-                  return (
-                    <tr key={cls.id || index} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                      <td className="px-6 py-4 font-bold text-slate-400 text-center">{no}</td>
-                      
-                      {/* Nama Kelas dengan Box Inisial */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-extrabold text-sm shrink-0 ${badge.bg}`}>
-                            {badge.label}
-                          </div>
-                          <span className="font-bold text-slate-800 dark:text-white text-sm">{cls.name}</span>
-                        </div>
-                      </td>
+            return (
+              <div 
+                key={cls.id || idx} 
+                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 sm:p-6 flex flex-col justify-between space-y-4 hover:shadow-md transition group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-indigo-200 dark:shadow-none">
+                        {cls.name.replace('Kelas ', '')}
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-base text-slate-900 dark:text-white leading-tight">
+                          {cls.name}
+                        </h3>
+                        <p className="text-[11px] text-slate-400 flex items-center gap-1 font-medium mt-0.5">
+                          <MapPin size={12} className="text-slate-400" /> {cls.room}
+                        </p>
+                      </div>
+                    </div>
 
-                      {/* Wali Kelas dengan Foto & Badge */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <img 
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${cls.teacherName}`} 
-                            alt={cls.teacherName}
-                            className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 object-cover shrink-0"
-                          />
-                          <div>
-                            <p className="font-bold text-slate-800 dark:text-white leading-tight">{cls.teacherName}</p>
-                            <span className="px-2 py-0.5 mt-0.5 rounded-md text-[9px] font-bold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 inline-block">
-                              Wali Kelas
-                            </span>
-                          </div>
-                        </div>
-                      </td>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 border border-emerald-200">
+                      Aktif
+                    </span>
+                  </div>
 
-                      {/* Jumlah Anak */}
-                      <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">
-                        {studentCount} anak
-                      </td>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+                    {cls.description}
+                  </p>
+                </div>
 
-                      {/* Tahun Ajaran & Status Aktif */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-700 dark:text-slate-300 font-medium">{cls.academicYear}</span>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60">
-                            {cls.status}
-                          </span>
-                        </div>
-                      </td>
+                <div className="space-y-3 pt-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-2 border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
+                        <Users size={14} className="text-indigo-600" /> Siswa Terisi
+                      </span>
+                      <span className="font-extrabold text-slate-800 dark:text-white">
+                        {studentCount} / {cls.capacity} Murid
+                      </span>
+                    </div>
 
-                      {/* Tombol Aksi (Edit & Hapus) */}
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          capacityPct > 90 ? 'bg-rose-500' : capacityPct > 60 ? 'bg-indigo-600' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(capacityPct, 100)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1 font-medium">
+                      <span className="flex items-center gap-1"><Clock size={12} /> {cls.schedule}</span>
+                      <span className="font-bold text-indigo-600">{capacityPct}% Kapasitas</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <img 
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${waliKelas?.name || 'Empty'}`} 
+                        alt="Wali" 
+                        className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Wali Kelas</p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[130px]">
+                          {waliKelas?.name || 'Belum Ditugaskan'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => openClassDetail(cls)}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-500 transition"
+                        title="Lihat Daftar Siswa"
+                      >
+                        <Eye size={15} />
+                      </button>
+
+                      {isAdmin && (
+                        <>
                           <button 
-                            onClick={() => openEditModal(cls)}
-                            className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl transition"
-                            title="Edit Kelas"
+                            onClick={() => handleOpenEdit(cls)}
+                            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-50 hover:text-amber-600 text-slate-500 transition"
+                            title="Edit Konfigurasi Kelas"
                           >
-                            <Edit size={15} />
+                            <Edit2 size={15} />
                           </button>
                           <button 
-                            onClick={() => handleDeleteClass(cls.id, cls.name)}
-                            className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl transition"
-                            title="Hapus Kelas"
+                            onClick={() => setDeleteModal({ show: true, classId: cls.id, className: cls.name })}
+                            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 text-slate-500 transition"
+                            title="Hapus Rombel"
                           >
                             <Trash2 size={15} />
                           </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 6. TABLE VIEW */}
+      {viewMode === 'table' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden w-full">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead className="bg-slate-50/70 dark:bg-slate-800/40 text-indigo-900/60 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                <tr>
+                  <th className="px-6 py-4 w-12 text-center">No.</th>
+                  <th className="px-6 py-4">Nama Rombel</th>
+                  <th className="px-6 py-4">Ruangan</th>
+                  <th className="px-6 py-4">Wali Kelas</th>
+                  <th className="px-4 py-4 text-center">Terisi / Kapasitas</th>
+                  <th className="px-6 py-4">Jadwal Belajar</th>
+                  <th className="px-6 py-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredClasses.map((cls, index) => {
+                  const safeStudents = Array.isArray(students) ? students : [];
+                  const safeUsers = Array.isArray(users) ? users : [];
+                  const classStudents = safeStudents.filter(s => (s.class || '').replace('TK ', 'Kelas ') === cls.name);
+                  const waliKelas = safeUsers.find(u => u.role === 'teacher' && (u.assignedClass || '').replace('TK ', 'Kelas ') === cls.name);
+
+                  return (
+                    <tr key={cls.id || index} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                      <td className="px-6 py-4 font-bold text-slate-400 text-center">{index + 1}</td>
+                      <td className="px-6 py-4 font-bold text-slate-800 dark:text-white text-sm">{cls.name}</td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{cls.room}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${waliKelas?.name || 'Empty'}`} className="w-6 h-6 rounded-full bg-slate-100" />
+                          <span className="font-bold text-slate-800 dark:text-white">{waliKelas?.name || 'Belum Ditugaskan'}</span>
                         </div>
                       </td>
-
+                      <td className="px-4 py-4 text-center font-bold text-indigo-600">
+                        {classStudents.length} / {cls.capacity} Siswa
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 font-medium">{cls.schedule}</td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button onClick={() => openClassDetail(cls)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:text-indigo-600"><Eye size={14} /></button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => handleOpenEdit(cls)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:text-amber-600"><Edit2 size={14} /></button>
+                              <button onClick={() => setDeleteModal({ show: true, classId: cls.id, className: cls.name })} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:text-rose-600"><Trash2 size={14} /></button>
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 6. FOOTER PAGINATION */}
-        <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <p className="text-slate-500 dark:text-slate-400 font-medium">
-            Menampilkan {filteredClasses.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredClasses.length)} dari {filteredClasses.length} kelas
-          </p>
-
-          <div className="flex items-center gap-1.5">
-            <button 
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-100 transition"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 rounded-xl font-bold transition flex items-center justify-center ${
-                  currentPage === page 
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none' 
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button 
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-100 transition"
-            >
-              <ChevronRight size={16} />
-            </button>
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-      </div>
-
-      {/* 7. CARD BANNER INFORMASI DI BAWAH */}
-      <div className="p-4 sm:p-5 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shrink-0">
-            <ShieldCheck size={22} />
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-900 dark:text-white text-xs">Informasi</h4>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-              Setiap kelas dapat memiliki wali kelas yang bertanggung jawab mengelola absensi dan data anak.
-            </p>
-          </div>
-        </div>
-
-        <button 
-          onClick={() => setActiveMenu('guru')}
-          className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shrink-0 shadow-sm"
-        >
-          <Users2 size={16} /> Kelola Wali Kelas
-        </button>
-      </div>
-
-      {/* MODAL: TAMBAH / EDIT KELAS */}
-      {(modalType === 'create' || modalType === 'edit') && (
+      {/* MODAL 1: DETAIL KELAS & DAFTAR SISWA */}
+      {detailModal.show && detailModal.classData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border dark:border-slate-800">
-            <div className="p-5 bg-indigo-600 text-white flex justify-between items-center">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <School size={18} /> {modalType === 'create' ? 'Tambah Kelas Baru' : `Edit: ${activeClass?.name}`}
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-white/80 hover:text-white"><X size={18}/></button>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border dark:border-slate-800">
+            <div className="p-4 bg-indigo-600 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-white/20 flex items-center justify-center font-extrabold text-sm">
+                  {detailModal.classData.name.replace('Kelas ', '')}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm leading-tight">{detailModal.classData.name}</h3>
+                  <p className="text-[10px] text-white/80">{detailModal.classData.room}</p>
+                </div>
+              </div>
+              <button onClick={() => setDetailModal({ show: false, classData: null, students: [], teacher: null })} className="text-white/80 hover:text-white">
+                <X size={18} />
+              </button>
             </div>
-            
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">Nama Kelas</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="Contoh: Kelas D" 
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl flex items-center justify-between border border-slate-100 dark:border-slate-800">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Wali Kelas Pengampu</p>
+                  <p className="font-bold text-slate-800 dark:text-white text-sm mt-0.5">
+                    {detailModal.teacher?.name || 'Belum Ditugaskan'}
+                  </p>
+                  <p className="text-[10px] text-slate-400">{detailModal.teacher?.email || '-'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Jam Pembelajaran</p>
+                  <p className="font-bold text-indigo-600 text-xs mt-0.5">{detailModal.classData.schedule}</p>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">Pilih Wali Kelas</label>
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-800 dark:text-white">
+                  Daftar Murid ({detailModal.students?.length || 0} Siswa)
+                </h4>
+
+                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                  {!detailModal.students || detailModal.students.length === 0 ? (
+                    <p className="text-slate-400 italic py-6 text-center">Belum ada siswa yang dimasukkan ke kelas ini.</p>
+                  ) : (
+                    detailModal.students.map((st, i) => (
+                      <div key={st.id || i} className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex items-center justify-between border border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-bold text-slate-400 w-4 text-center">{i + 1}.</span>
+                          <img src={st.photo} alt={st.name} className="w-7 h-7 rounded-full bg-slate-200 object-cover" />
+                          <span className="font-bold text-slate-800 dark:text-white">{st.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium">{st.gender === 'P' ? 'Perempuan' : 'Laki-laki'}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button 
+                onClick={() => setDetailModal({ show: false, classData: null, students: [], teacher: null })}
+                className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: FORM TAMBAH / EDIT KELAS (KHUSUS ADMIN) */}
+      {formModal.show && isAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border dark:border-slate-800">
+            <div className="p-4 bg-indigo-600 text-white flex justify-between items-center">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                <School size={16} /> {formModal.isEdit ? 'Edit Konfigurasi Rombel' : 'Tambah Rombel Baru'}
+              </h3>
+              <button onClick={() => setFormModal({ show: false, isEdit: false, targetId: null })} className="text-white/80 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Nama Rombel / Kelas</label>
                 <input 
                   type="text" 
                   required
-                  placeholder="Contoh: Bu Sari" 
-                  value={formData.teacherName}
-                  onChange={e => setFormData({ ...formData, teacherName: e.target.value })}
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Contoh: Kelas D"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Tahun Ajaran</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Ruangan</label>
                   <input 
                     type="text" 
-                    placeholder="2025/2026" 
-                    value={formData.academicYear}
-                    onChange={e => setFormData({ ...formData, academicYear: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Ruang Cempaka"
+                    value={formData.room}
+                    onChange={e => setFormData({ ...formData, room: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Status</label>
-                  <select 
-                    value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                  >
-                    <option value="Aktif">Aktif</option>
-                    <option value="Nonaktif">Nonaktif</option>
-                  </select>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Kapasitas Kursi</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    max="50"
+                    value={formData.capacity}
+                    onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none"
+                  />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Jadwal Pembelajaran</label>
+                <input 
+                  type="text" 
+                  value={formData.schedule}
+                  onChange={e => setFormData({ ...formData, schedule: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none"
+                  placeholder="07:30 - 11:00 WIB"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Deskripsi / Program Belajar</label>
+                <textarea 
+                  rows={3}
+                  value={formData.description}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
                 <button 
                   type="button" 
-                  onClick={() => setModalType(null)} 
-                  className="px-4 py-2.5 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition"
+                  onClick={() => setFormModal({ show: false, isEdit: false, targetId: null })}
+                  className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   Batal
                 </button>
                 <button 
-                  type="submit" 
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-md transition"
+                  type="submit"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md"
                 >
-                  {modalType === 'create' ? 'Simpan Kelas' : 'Perbarui'}
+                  {formModal.isEdit ? 'Perbarui Konfigurasi' : 'Simpan Rombel'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: KONFIRMASI HAPUS ROMBEL */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border dark:border-slate-800 p-6 space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-slate-800 dark:text-white">Hapus Rombongan Belajar?</h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Apakah Anda yakin ingin menghapus <b>"{deleteModal.className}"</b>?
+              </p>
+            </div>
+            <div className="flex gap-2 justify-center pt-2">
+              <button 
+                onClick={() => setDeleteModal({ show: false, classId: null, className: '' })}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}
